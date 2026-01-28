@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Sistema Professores{% endblock %}</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #ffffff;
+    }
+    .nowrap {
+        white-space: nowrap;
+    }
+  </style>
+
+  <!-- Menu de navegação -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'os_app:index' %}">Sistema Professores</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <!-- Relatórios - serão implementados depois -->
+          <!-- Menu Relatórios removido temporariamente -->
+
+          <!-- Menu Professores Dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="professoresDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Professores
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="professoresDropdown">
+              <li><a class="dropdown-item" href="{% url 'os_app:lista_professores' %}">Listar Professores</a></li>
+              <li><a class="dropdown-item" href="{% url 'os_app:novo_professor' %}">Novo Professor</a></li>
+            </ul>
+          </li>
+
+          <!-- Usuário logado / Logout -->
+          {% if request.user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Olá, {{ request.user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="{% url 'os_app:logout' %}">Sair</a></li>
+            </ul>
+          </li>
+          {% endif %}
+
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+        <i class="bi bi-buildings"></i> Escolas
+    </a>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{% url 'os_app:lista_escolas_nucleo' %}">
+            <i class="bi bi-buildings"></i> Escolas Núcleo
+        </a></li>
+        <li><a class="dropdown-item" href="{% url 'os_app:lista_escolas_dependentes' %}">
+            <i class="bi bi-building"></i> Escolas Dependentes
+        </a></li>
+    </ul>
+</li>
+```
+
+  <!-- Conteúdo principal -->
+  <main class="container mt-4">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

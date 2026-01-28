@@ -1,0 +1,2229 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Cadastrar{% endif %} Professor - SISPROF{% endblock %}
+
+{% block extra_css %}
+<style>
+.foto-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.foto-frame {
+    width: 200px;
+    height: 200px;
+    border: 4px solid #3498db;
+    border-radius: 15px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f9fa;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.foto-professor {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.foto-placeholder {
+    text-align: center;
+    color: #adb5bd;
+}
+
+.foto-placeholder i {
+    font-size: 100px;
+    display: block;
+}
+
+/* Estilo das Abas */
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: #f8f9fa;
+    color: #3498db;
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+    color: white !important;
+    border-radius: 8px 8px 0 0;
+}
+
+.nav-tabs .nav-link i {
+    margin-right: 8px;
+}
+
+.tab-content {
+    border: 2px solid #dee2e6;
+    border-top: none;
+    padding: 2rem;
+    border-radius: 0 0 8px 8px;
+    background: white;
+}
+
+/* Cards dentro das abas */
+.tab-pane .card {
+    border: none;
+    box-shadow: none;
+}
+
+.tab-pane .card-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Badge de aba ativa */
+.nav-tabs .nav-link.active::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: white;
+}
+
+/* Indicador de campos obrigatórios */
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Sticky foto */
+.foto-sticky {
+    position: sticky;
+    top: 20px;
+}
+
+/* Resultados de busca (bairro e substituto) */
+#bairro_resultados,
+#substituto_resultados {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+#bairro_resultados .list-group-item,
+#substituto_resultados .list-group-item {
+    cursor: pointer;
+}
+
+#bairro_resultados .list-group-item:hover,
+#substituto_resultados .list-group-item:hover {
+    background-color: #f8f9fa;
+}
+/* CSS PARA CAMPO MATÉRIAS */
+.bg-purple { 
+    background-color: #6f42c1 !important; 
+    color: white !important;
+}
+
+.bg-teal { 
+    background-color: #20c997 !important; 
+    color: white !important;
+}
+
+.badge:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+    transition: all 0.2s;
+}
+
+.badge .btn-close {
+    opacity: 0.7;
+}
+
+.badge .btn-close:hover {
+    opacity: 1;
+}
+
+#materias-badges-display {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.materia-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold">
+                <i class="bi bi-person-{% if form.instance.pk %}gear{% else %}plus{% endif %} text-primary"></i> 
+                {% if form.instance.pk %}Editar Professor{% else %}Cadastrar Novo Professor{% endif %}
+            </h2>
+            <p class="text-muted">Preencha os dados utilizando as abas abaixo</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'os_app:lista_professores' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="professorForm">
+        {% csrf_token %}
+        
+        <div class="row g-4">
+            <!-- Coluna da Foto (sempre visível e sticky) -->
+            <div class="col-lg-3">
+                <div class="card foto-sticky">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-camera"></i> Foto</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="foto-container">
+                            <div id="foto-display" class="foto-frame">
+                                {% if form.instance.foto %}
+                                <img src="{{ form.instance.foto.url }}" alt="{{ form.instance.nome }}" class="foto-professor">
+                                {% else %}
+                                <div class="foto-placeholder">
+                                    <i class="bi bi-person-circle"></i>
+                                    <p class="mt-2 mb-0 small text-muted">Sem foto</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.foto.id_for_label }}" class="btn btn-primary w-100">
+                                <i class="bi bi-upload"></i> Escolher Foto
+                            </label>
+                            <input type="file" id="{{ form.foto.id_for_label }}" name="foto" class="d-none" accept="image/*">
+                        </div>
+                        
+                        {% if form.foto.errors %}
+                        <div class="alert alert-danger alert-sm">
+                            <i class="bi bi-exclamation-circle"></i> {{ form.foto.errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <small class="text-muted d-block mb-3">
+                            <i class="bi bi-info-circle"></i> JPG, PNG ou GIF<br>Máximo: 5MB
+                        </small>
+                        
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" id="btn-remover-foto" style="{% if not form.instance.foto %}display: none;{% endif %}">
+                            <i class="bi bi-trash"></i> Remover Foto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna das Abas -->
+            <div class="col-lg-9">
+                <!-- Navegação das Abas -->
+                <ul class="nav nav-tabs" id="professorTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pessoais-tab" data-bs-toggle="tab" data-bs-target="#pessoais" type="button" role="tab">
+                            <i class="bi bi-person-vcard"></i> Dados Pessoais
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="endereco-tab" data-bs-toggle="tab" data-bs-target="#endereco" type="button" role="tab">
+                            <i class="bi bi-geo-alt"></i> Endereço
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="profissionais-tab" data-bs-toggle="tab" data-bs-target="#profissionais" type="button" role="tab">
+                            <i class="bi bi-briefcase"></i> Dados Profissionais
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="turmas-tab" data-bs-toggle="tab" data-bs-target="#turmas" type="button" role="tab">
+                            <i class="bi bi-book"></i> Turmas
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Conteúdo das Abas -->
+                <div class="tab-content" id="professorTabContent">
+                    
+                    <!-- Aba 1: Dados Pessoais -->
+                    <div class="tab-pane fade show active" id="pessoais" role="tabpanel">
+                        <div class="row mb-3">
+                            <div class="col-md-9">
+                                <label for="{{ form.nome.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-person"></i> Nome Completo
+                                </label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.nome.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="ref_global" class="form-label fw-bold">
+                                    <i class="bi bi-fingerprint"></i> Ref. Global
+                                </label>
+                                <input type="text" id="ref_global" name="ref_global" class="form-control text-center fw-bold" 
+                                       maxlength="5" placeholder="5 CHAR" style="font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase;">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Até 5 caracteres
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.cpf.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-credit-card"></i> CPF
+                                </label>
+                                {{ form.cpf }}
+                                {% if form.cpf.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.cpf.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.telefone.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-telephone"></i> Telefone
+                                </label>
+                                {{ form.telefone }}
+                                {% if form.telefone.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.telefone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-envelope"></i> E-mail
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-primary" onclick="proximaAba('endereco-tab')">
+                                Próximo: Endereço <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Aba 2: Endereço -->
+                    <div class="tab-pane fade" id="endereco" role="tabpanel">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-mailbox"></i> CEP
+                                </label>
+                                <div class="input-group">
+                                    {{ form.cep }}
+                                    <button type="button" class="btn btn-outline-secondary" id="btnBuscarCEP" title="Buscar CEP">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" id="cep-feedback"></small>
+                                {% if form.cep.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.cep.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.endereco.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-house"></i> Endereço
+                                </label>
+                                {{ form.endereco }}
+                                {% if form.endereco.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.endereco.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="{{ form.numero.id_for_label }}" class="form-label fw-bold">Nº</label>
+                                {{ form.numero }}
+                                {% if form.numero.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.numero.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="bairro_search" class="form-label fw-bold">
+                                    <i class="bi bi-signpost"></i> Bairro
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" id="bairro_search" class="form-control" 
+                                           placeholder="Digite para buscar ou adicionar..." autocomplete="off">
+                                    {{ form.bairro }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" 
+                                            data-bs-target="#modalBairro" title="Adicionar novo bairro">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btnLimparBairro" 
+                                            title="Limpar seleção">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div id="bairro_resultados" class="list-group position-absolute w-100" 
+                                     style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
+                                {% if form.bairro.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.bairro.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.cidade.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-pin-map"></i> Cidade
+                                </label>
+                                {{ form.cidade }}
+                                {% if form.cidade.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.cidade.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold required-field">
+                                    <i class="bi bi-flag"></i> UF
+                                </label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" onclick="proximaAba('pessoais-tab')">
+                                <i class="bi bi-arrow-left"></i> Anterior
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="proximaAba('profissionais-tab')">
+                                Próximo: Dados Profissionais <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Aba 3: Dados Profissionais -->
+                    <div class="tab-pane fade" id="profissionais" role="tabpanel">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.matricula.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-card-heading"></i> Matrícula
+                                </label>
+                                {{ form.matricula }}
+                                {% if form.matricula.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.matricula.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.cargo.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-award"></i> Cargo
+                                </label>
+                                <div class="input-group">
+                                    {{ form.cargo }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalCargo" title="Adicionar novo cargo">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                                {% if form.cargo.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.cargo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.situacao_funcional.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-person-check"></i> Situação Funcional
+                                </label>
+                                {{ form.situacao_funcional }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="{{ form.area_atuacao.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-book"></i> Área de Atuação
+                                </label>
+                                {{ form.area_atuacao }}
+                                {% if form.area_atuacao.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.area_atuacao.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-book-half"></i> Matérias
+                                </label>
+                                <small class="text-muted d-block mb-3">
+                                    Selecione todas as matérias que o professor leciona
+                                </small>
+                                
+                                <!-- Container para badges selecionados -->
+                                <div id="materias-badges-display" class="mb-3 p-3 border rounded bg-light" style="min-height: 60px;">
+                                    <span class="text-muted fst-italic" id="materias-empty-msg">
+                                        <i class="bi bi-info-circle"></i> Nenhuma matéria selecionada
+                                    </span>
+                                </div>
+                                
+                                <!-- Checkboxes em grid 3 colunas -->
+                                <div class="row g-2">
+                                    {% for value, label in form.materias_selecionadas.field.choices %}
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input materia-checkbox" 
+                                                   type="checkbox" 
+                                                   name="materias_selecionadas" 
+                                                   value="{{ value }}"
+                                                   id="id_materia_{{ forloop.counter }}"
+                                                   {% if value in form.materias_selecionadas.value %}checked{% endif %}>
+                                            <label class="form-check-label" for="id_materia_{{ forloop.counter }}">
+                                                {{ label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {% if form.materias_selecionadas.errors %}
+                                <div class="text-danger mt-1">
+                                    <i class="bi bi-exclamation-circle"></i> {{ form.materias_selecionadas.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.nucleo.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-buildings"></i> Escola Núcleo
+                                </label>
+                                <div class="input-group">
+                                    {{ form.escola_nucleo }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalEscolaNucleo" title="Adicionar nova escola núcleo">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" id="nucleo-info"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.escola.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-building"></i> Escola Dependente
+                                </label>
+                                <div class="input-group">
+                                    {{ form.escola_lotacao }}
+                                    <!-- Campo hidden para escola_nucleo -->
+                                    <input type="hidden" id="id_escola_nucleo" name="escola_nucleo">
+                                    <button type="button" class="btn btn-outline-success" id="btnNovaEscola" data-bs-toggle="modal" data-bs-target="#modalEscolaDependente" disabled title="Selecione uma escola núcleo primeiro">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" id="escola-info"></small>
+                                {% if form.escola.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.escola.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" onclick="proximaAba('endereco-tab')">
+                                <i class="bi bi-arrow-left"></i> Anterior
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="proximaAba('turmas-tab')">
+                                Próximo: Turmas <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Aba 4: Turmas -->
+                    <div class="tab-pane fade" id="turmas" role="tabpanel">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Informações sobre Turmas:</strong> Preencha os dados das turmas em que o professor atua.
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.modalidade.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-diagram-3"></i> Modalidade
+                                </label>
+                                {{ form.modalidade }}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="{{ form.serie.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-123"></i> Série
+                                </label>
+                                <div class="input-group">
+                                    {{ form.serie }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalNovaSerie" title="Adicionar nova série">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="{{ form.turno.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-clock"></i> Turno
+                                </label>
+                                {{ form.turno }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="{{ form.em_sala.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-door-open"></i> Em Sala
+                                </label>
+                                {{ form.em_sala }}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="{{ form.motivo.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-chat-left-text"></i> Motivo
+                                </label>
+                                <div class="input-group">
+                                    {{ form.motivo }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalNovoMotivo" title="Adicionar novo motivo">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Motivo de não estar em sala (se aplicável)</small>
+                            </div>
+                            
+                            <div class="col-md-5">
+                                <label for="substituto" class="form-label fw-bold">
+                                    <i class="bi bi-person-plus"></i> Substituto
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" id="substituto_search" class="form-control" placeholder="Digite o nome do professor..." autocomplete="off">
+                                    {{ form.substituto }}
+                                    <button type="button" class="btn btn-outline-secondary" id="btnLimparSubstituto" title="Limpar seleção">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div id="substituto_resultados" class="list-group position-absolute w-100" style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
+                                <small class="text-muted">Professor que está substituindo (se aplicável)</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="{{ form.observacao_turmas.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-textarea-t"></i> Observação
+                                </label>
+                                {{ form.observacao_turmas }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" onclick="proximaAba('profissionais-tab')">
+                                <i class="bi bi-arrow-left"></i> Anterior
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg" id="btnSalvarProfessor">
+                                <i class="bi bi-check-circle"></i> {% if form.instance.pk %}Atualizar{% else %}Cadastrar{% endif %} Professor
+                            </button>
+                        </div>
+                        
+                        <!-- Debug: Verificar se botão está funcionando -->
+                        <script>
+                        console.log('Botão de salvar professor encontrado:', document.getElementById('btnSalvarProfessor'));
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal Escola Núcleo -->
+<div class="modal fade" id="modalEscolaNucleo" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-buildings"></i> Cadastro de Escola Núcleo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEscolaNucleo">
+                    {% csrf_token %}
+                    
+                    <!-- Dados Básicos -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Dados Básicos</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Nome da Escola Núcleo *</label>
+                                    <input type="text" name="nome" class="form-control" required placeholder="Ex: Escola Estadual Central">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Código INEP</label>
+                                    <input type="text" name="codigo_inep" class="form-control" maxlength="8" placeholder="00000000">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Código</label>
+                                    <input type="text" name="codigo" class="form-control" maxlength="20" placeholder="Interno">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Telefone</label>
+                                    <input type="text" name="telefone" class="form-control" placeholder="(00) 00000-0000" id="modal_nucleo_telefone">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">E-mail</label>
+                                    <input type="email" name="email" class="form-control" placeholder="escola@exemplo.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-geo-alt"></i> Endereço</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-9">
+                                    <label class="form-label fw-bold">Logradouro *</label>
+                                    <input type="text" name="endereco" class="form-control" required placeholder="Rua, Avenida, etc.">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Número</label>
+                                    <input type="text" name="numero" class="form-control" placeholder="Nº">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold">Bairro</label>
+                                    <div class="input-group">
+                                        <input type="text" id="nucleo_bairro_search" class="form-control" 
+                                               placeholder="Digite para buscar..." autocomplete="off">
+                                        <input type="hidden" name="bairro" id="id_nucleo_bairro">
+                                        <button type="button" class="btn btn-outline-success btn-sm" 
+                                                onclick="abrirModalBairroNucleo()" title="Adicionar novo bairro">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                onclick="limparBairroNucleo()" title="Limpar seleção">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                    <div id="nucleo_bairro_resultados" class="list-group position-absolute w-100" 
+                                         style="z-index: 1050; display: none; max-height: 200px; overflow-y: auto;"></div>
+                                    <small class="text-muted" id="nucleo_bairro_selecionado"></small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Cidade *</label>
+                                    <input type="text" name="cidade" class="form-control" required placeholder="Nome da cidade">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">UF *</label>
+                                    <input type="text" name="estado" class="form-control" maxlength="2" required placeholder="UF" id="modal_nucleo_estado">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">CEP</label>
+                                    <input type="text" name="cep" class="form-control" maxlength="9" placeholder="00000-000" id="modal_nucleo_cep">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Zona *</label>
+                                    <select name="zona" class="form-control" required>
+                                        <option value="">Selecione</option>
+                                        <option value="rural">Rural</option>
+                                        <option value="urbana">Urbana</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSalvarEscolaNucleo">
+                    <i class="bi bi-check-circle"></i> Salvar Escola Núcleo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Escola Dependente -->
+<div class="modal fade" id="modalEscolaDependente" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-building"></i> Cadastro de Escola Dependente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Escola Núcleo:</strong> <span id="modal_nucleo_nome_display">-</span>
+                </div>
+                
+                <form id="formEscolaDependente">
+                    {% csrf_token %}
+                    <input type="hidden" name="nucleo" id="modal_nucleo_id">
+                    
+                    <!-- Dados Básicos -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Dados Básicos</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold">Nome da Escola Dependente *</label>
+                                    <input type="text" name="nome" class="form-control" required placeholder="Ex: Escola Estadual anexo 1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Código INEP</label>
+                                    <input type="text" name="codigo_inep" class="form-control" maxlength="8" placeholder="00000000">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Telefone</label>
+                                    <input type="text" name="telefone" class="form-control" placeholder="(00) 00000-0000" id="modal_dependente_telefone">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">E-mail</label>
+                                    <input type="email" name="email" class="form-control" placeholder="escola@exemplo.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-geo-alt"></i> Endereço</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">CEP</label>
+                                    <input type="text" name="cep" class="form-control" maxlength="9" placeholder="00000-000" id="modal_dependente_cep">
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label fw-bold">Logradouro *</label>
+                                    <input type="text" name="endereco" class="form-control" required placeholder="Rua, Avenida, etc." id="modal_dependente_endereco">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">Número</label>
+                                    <input type="text" name="numero" class="form-control" placeholder="Nº">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold">Bairro</label>
+                                    <div class="input-group">
+                                        <input type="text" id="dependente_bairro_search" class="form-control" 
+                                               placeholder="Digite para buscar..." autocomplete="off">
+                                        <input type="hidden" name="bairro" id="id_escola_bairro">
+                                        <button type="button" class="btn btn-outline-success btn-sm" 
+                                                onclick="abrirModalBairroDependente()" title="Adicionar novo bairro">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                onclick="limparBairroDependente()" title="Limpar seleção">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                    <div id="dependente_bairro_resultados" class="list-group position-absolute w-100" 
+                                         style="z-index: 1050; display: none; max-height: 200px; overflow-y: auto;"></div>
+                                    <small class="text-muted" id="dependente_bairro_selecionado"></small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Cidade *</label>
+                                    <input type="text" name="cidade" class="form-control" required placeholder="Nome da cidade">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">UF *</label>
+                                    <input type="text" name="estado" class="form-control" maxlength="2" required placeholder="UF" id="modal_dependente_estado">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Zona *</label>
+                                    <select name="zona" class="form-control" required>
+                                        <option value="">Selecione</option>
+                                        <option value="rural">Rural</option>
+                                        <option value="urbana">Urbana</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="btnSalvarEscolaDependente">
+                    <i class="bi bi-check-circle"></i> Salvar Escola Dependente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Cargo -->
+<div class="modal fade" id="modalCargo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-award"></i> Novo Cargo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoCargo">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Cargo *</label>
+                        <input type="text" name="nome" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+                <div class="alert alert-danger" id="cargo_erro" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btnSalvarCargo">
+                    <i class="bi bi-check"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Série -->
+<div class="modal fade" id="modalNovaSerie" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-123"></i> Nova Série</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaSerie">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome da Série *</label>
+                        <input type="text" name="nome" class="form-control" required placeholder="Ex: 1º Ano, 2º Ano, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="2" placeholder="Descrição adicional (opcional)"></textarea>
+                    </div>
+                    <div id="serie_erro" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSalvarSerie">
+                    <i class="bi bi-check-circle"></i> Salvar Série
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Motivo -->
+<div class="modal fade" id="modalNovoMotivo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-chat-left-text"></i> Novo Motivo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoMotivo">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição do Motivo *</label>
+                        <input type="text" name="descricao" class="form-control" required placeholder="Ex: Licença Médica, Afastamento, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observações</label>
+                        <textarea name="observacoes" class="form-control" rows="2" placeholder="Observações adicionais (opcional)"></textarea>
+                    </div>
+                    <div id="motivo_erro" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" id="btnSalvarMotivo">
+                    <i class="bi bi-check-circle"></i> Salvar Motivo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Bairro -->
+<div class="modal fade" id="modalBairro" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-signpost"></i> Novo Bairro</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoBairro">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Bairro *</label>
+                        <input type="text" name="nome" class="form-control" required 
+                               placeholder="Ex: Centro, Jardim das Flores">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold">Cidade</label>
+                            <input type="text" name="cidade" class="form-control" 
+                                   placeholder="Nome da cidade (opcional)">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">UF</label>
+                            <input type="text" name="estado" class="form-control" maxlength="2" 
+                                   placeholder="UF" id="modal_bairro_estado">
+                        </div>
+                    </div>
+                    <div id="bairro_erro" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-info text-white" id="btnSalvarBairro">
+                    <i class="bi bi-check-circle"></i> Salvar Bairro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== INÍCIO DO CARREGAMENTO ===');
+    console.log('DOMContentLoaded disparado!');
+    
+    // ===== CARREGAR SÉRIES E MOTIVOS =====
+    function carregarSeries() {
+        fetch('{% url "os_app:listar_series_ajax" %}')
+            .then(r => r.json())
+            .then(series => {
+                const serieSelect = document.getElementById('serie');
+                if (serieSelect) {
+                    // Limpar opções existentes (exceto a primeira "Selecione")
+                    serieSelect.innerHTML = '<option value="">Selecione</option>';
+                    
+                    // Adicionar séries
+                    series.forEach(serie => {
+                        const option = new Option(serie.nome, serie.id);
+                        serieSelect.add(option);
+                    });
+                    
+                    console.log(`✅ ${series.length} séries carregadas`);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar séries:', error);
+            });
+    }
+    
+    function carregarMotivos() {
+        fetch('{% url "os_app:listar_motivos_ajax" %}')
+            .then(r => r.json())
+            .then(motivos => {
+                const motivoSelect = document.getElementById('motivo');
+                if (motivoSelect) {
+                    // Limpar opções existentes (exceto a primeira "Selecione")
+                    motivoSelect.innerHTML = '<option value="">Selecione</option>';
+                    
+                    // Adicionar motivos
+                    motivos.forEach(motivo => {
+                        const option = new Option(motivo.descricao, motivo.id);
+                        motivoSelect.add(option);
+                    });
+                    
+                    console.log(`✅ ${motivos.length} motivos carregados`);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar motivos:', error);
+            });
+    }
+    
+    // Carregar ao iniciar
+    carregarSeries();
+    carregarMotivos();
+    
+    // Validação e feedback do formulário principal
+    const professorForm = document.getElementById('professorForm');
+    const btnSalvarProfessor = document.getElementById('btnSalvarProfessor');
+    
+    // Debug detalhado
+    console.log('Form encontrado:', professorForm);
+    console.log('Botão salvar encontrado:', btnSalvarProfessor);
+    
+    if (!professorForm) {
+        console.error('ERRO CRÍTICO: Formulário professorForm NÃO foi encontrado!');
+        console.log('Tentando buscar todos os forms da página:');
+        document.querySelectorAll('form').forEach((form, index) => {
+            console.log(`Form ${index}:`, form.id || 'sem ID', form);
+        });
+    }
+    
+    if (!btnSalvarProfessor) {
+        console.error('ERRO CRÍTICO: Botão btnSalvarProfessor NÃO foi encontrado!');
+        console.log('Tentando buscar todos os botões submit:');
+        document.querySelectorAll('button[type="submit"]').forEach((btn, index) => {
+            console.log(`Botão ${index}:`, btn.id || 'sem ID', btn.textContent);
+        });
+    }
+    
+    if (professorForm) {
+        professorForm.addEventListener('submit', function(e) {
+            console.log('✅ Submit do formulário disparado!');
+            window.formSubmitted = true; // Flag para indicar que submit foi disparado
+            
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            
+            // === TRATAMENTO ESCOLA NÚCLEO vs DEPENDENTE ===
+            const escolaSelect = document.getElementById('id_escola');
+            const escolaNucleoHidden = document.getElementById('id_escola_nucleo');
+            const nucleoSelect = document.getElementById('id_nucleo');
+            
+            if (escolaSelect && escolaNucleoHidden) {
+                const selectedOption = escolaSelect.options[escolaSelect.selectedIndex];
+                
+                if (selectedOption && selectedOption.dataset.isNucleo === 'true') {
+                    console.log('🏫 Salvando no NÚCLEO');
+                    // É núcleo - preencher escola_nucleo com o ID do núcleo selecionado
+                    const nucleoId = nucleoSelect ? nucleoSelect.value : '';
+                    escolaNucleoHidden.value = nucleoId;
+                    // Limpar campo escola
+                    escolaSelect.value = '';
+                    console.log('  escola_nucleo_id:', nucleoId);
+                } else if (escolaSelect.value) {
+                    console.log('📚 Salvando na ESCOLA DEPENDENTE');
+                    // É escola dependente - limpar campo escola_nucleo
+                    escolaNucleoHidden.value = '';
+                    console.log('  escola_id:', escolaSelect.value);
+                } else {
+                    console.log('⚠️  Nenhuma escola selecionada');
+                    // Nenhuma escola selecionada - limpar ambos
+                    escolaNucleoHidden.value = '';
+                }
+            }
+            
+            // Validações básicas usando querySelector com name
+            const nome = this.querySelector('input[name="nome"]');
+            const cpf = this.querySelector('input[name="cpf"]');
+            const email = this.querySelector('input[name="email"]');
+            
+            console.log('Campos encontrados:', {
+                nome: nome?.value,
+                cpf: cpf?.value,
+                email: email?.value
+            });
+            
+            if (!nome || !nome.value.trim()) {
+                e.preventDefault();
+                window.formSubmitted = false;
+                alert('Por favor, preencha o nome do professor.');
+                proximaAba('pessoais-tab');
+                if (nome) nome.focus();
+                return false;
+            }
+            
+            if (!cpf || !cpf.value.trim()) {
+                e.preventDefault();
+                window.formSubmitted = false;
+                alert('Por favor, preencha o CPF do professor.');
+                proximaAba('pessoais-tab');
+                if (cpf) cpf.focus();
+                return false;
+            }
+            
+            if (!email || !email.value.trim()) {
+                e.preventDefault();
+                window.formSubmitted = false;
+                alert('Por favor, preencha o e-mail do professor.');
+                proximaAba('pessoais-tab');
+                if (email) email.focus();
+                return false;
+            }
+            
+            // Feedback visual - desabilita botão durante submit
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+            }
+            
+            console.log('✅ Formulário validado, enviando...');
+            // Permite o submit continuar normalmente
+            return true;
+        });
+    } else {
+        console.error('ERRO: Formulário professorForm não encontrado!');
+    }
+    
+    // Adicionar listener direto no botão também (backup)
+    if (btnSalvarProfessor) {
+        btnSalvarProfessor.addEventListener('click', function(e) {
+            console.log('✅ Botão salvar clicado!');
+            console.log('Tipo do botão:', this.type);
+            console.log('Form do botão:', this.form);
+            console.log('Form action:', this.form?.action);
+            console.log('Form method:', this.form?.method);
+            
+            // Teste: verificar se o form está bloqueando
+            if (!this.form) {
+                console.error('❌ ERRO: Botão não está dentro de um form!');
+                e.preventDefault();
+                alert('ERRO: Botão não está conectado ao formulário. Verifique o HTML.');
+                return false;
+            }
+            
+            // FALLBACK: Se o submit não disparar automaticamente, forçar
+            // Aguardar um pouco para ver se o submit normal funciona
+            setTimeout(() => {
+                if (!window.formSubmitted) {
+                    console.warn('⚠️ Submit automático não funcionou, forçando submit...');
+                    this.form.submit();
+                }
+            }, 100);
+            
+            // O botão type="submit" vai disparar o evento de submit do form automaticamente
+        });
+        
+        // Teste adicional: verificar se o botão está visível e habilitado
+        console.log('Botão visível?', btnSalvarProfessor.offsetParent !== null);
+        console.log('Botão habilitado?', !btnSalvarProfessor.disabled);
+    } else {
+        console.error('ERRO: Botão salvar não encontrado!');
+    }
+    
+    // Converter Ref. Global para maiúsculas automaticamente
+    const refGlobalInput = document.getElementById('ref_global');
+    if (refGlobalInput) {
+        refGlobalInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // Função para mudar de aba
+    window.proximaAba = function(tabId) {
+        const tabElement = document.getElementById(tabId);
+        if (tabElement) {
+            const tab = new bootstrap.Tab(tabElement);
+            tab.show();
+        }
+    };
+    
+    // Máscaras de formatação
+    const cpfInput = document.getElementById('id_cpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const telefoneInput = document.getElementById('id_telefone');
+    if (telefoneInput) {
+        telefoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const cepInput = document.getElementById('id_cep');
+    if (cepInput) {
+        cepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 8) {
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const estadoInput = document.getElementById('id_estado');
+    if (estadoInput) {
+        estadoInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // Carregamento de escolas dependentes baseado na escola núcleo selecionada
+    const nucleoSelect = document.getElementById('id_nucleo');
+    const escolaSelect = document.getElementById('id_escola');
+    const btnNovaEscola = document.getElementById('btnNovaEscola');
+    const escolaInfo = document.getElementById('escola-info');
+    
+    if (nucleoSelect && escolaSelect) {
+        nucleoSelect.addEventListener('change', function() {
+            const nucleoId = this.value;
+            if (nucleoId) {
+                btnNovaEscola.disabled = false;
+                escolaInfo.innerHTML = '<i class="bi bi-hourglass-split"></i> Carregando...';
+                
+                fetch(`{% url 'os_app:carregar_escolas_por_nucleo' %}?nucleo_id=${nucleoId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        escolaSelect.innerHTML = '<option value="">Selecione</option>';
+                        
+                        data.forEach(e => {
+                            const option = new Option(e.nome, e.id);
+                            option.dataset.isNucleo = e.is_nucleo;
+                            escolaSelect.add(option);
+                        });
+                        
+                        const totalEscolas = data.filter(e => !e.is_nucleo).length;
+                        escolaInfo.innerHTML = totalEscolas > 0 
+                            ? `<i class="bi bi-check-circle text-success"></i> ${totalEscolas} escola(s) dependente(s) + Núcleo` 
+                            : '<i class="bi bi-info-circle text-info"></i> Somente Escola Núcleo disponível';
+                        escolaInfo.className = 'small';
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        escolaInfo.innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i> Erro ao carregar';
+                        escolaInfo.className = 'small';
+                    });
+            } else {
+                escolaSelect.innerHTML = '<option value="">Selecione uma escola núcleo primeiro</option>';
+                btnNovaEscola.disabled = true;
+                escolaInfo.innerHTML = '<i class="bi bi-info-circle"></i> Selecione uma escola núcleo primeiro';
+                escolaInfo.className = 'text-muted small';
+            }
+        });
+        
+        // Detectar quando selecionar núcleo e ajustar os campos
+        escolaSelect.addEventListener('change', function() {
+            const nucleoId = nucleoSelect.value;
+            const escolaId = this.value;
+            const selectedOption = this.options[this.selectedIndex];
+            const escolaNucleoHidden = document.getElementById('id_escola_nucleo');
+            
+            if (selectedOption && selectedOption.dataset.isNucleo === 'true') {
+                console.log('✅ Núcleo selecionado como escola de lotação');
+                // Está selecionando o núcleo
+                // Limpar campo escola e preencher escola_nucleo
+                if (escolaNucleoHidden) {
+                    escolaNucleoHidden.value = nucleoId;
+                }
+                // Forçar o select escola a ficar vazio no backend
+                // Mas manter visual com o núcleo selecionado
+            } else {
+                console.log('📚 Escola dependente selecionada');
+                // Está selecionando escola dependente
+                // Limpar escola_nucleo
+                if (escolaNucleoHidden) {
+                    escolaNucleoHidden.value = '';
+                }
+            }
+        });
+    }
+    
+    // Máscaras para modal Escola Núcleo
+    const modalNucleoTelefone = document.getElementById('modal_nucleo_telefone');
+    if (modalNucleoTelefone) {
+        modalNucleoTelefone.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const modalNucleoCep = document.getElementById('modal_nucleo_cep');
+    if (modalNucleoCep) {
+        modalNucleoCep.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 8) {
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const modalNucleoEstado = document.getElementById('modal_nucleo_estado');
+    if (modalNucleoEstado) {
+        modalNucleoEstado.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // Máscaras para modal Escola Dependente
+    const modalDependenteTelefone = document.getElementById('modal_dependente_telefone');
+    if (modalDependenteTelefone) {
+        modalDependenteTelefone.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const modalDependenteCep = document.getElementById('modal_dependente_cep');
+    if (modalDependenteCep) {
+        modalDependenteCep.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 8) {
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const modalDependenteEstado = document.getElementById('modal_dependente_estado');
+    if (modalDependenteEstado) {
+        modalDependenteEstado.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // Preview foto
+    const fotoInput = document.getElementById('id_foto');
+    const fotoDisplay = document.getElementById('foto-display');
+    const btnRemover = document.getElementById('btn-remover-foto');
+    
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5*1024*1024) { alert('Máximo 5MB!'); this.value=''; return; }
+                if (!file.type.startsWith('image/')) { alert('Apenas imagens!'); this.value=''; return; }
+                const reader = new FileReader();
+                reader.onload = e => {
+                    fotoDisplay.innerHTML = `<img src="${e.target.result}" class="foto-professor">`;
+                    btnRemover.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        btnRemover?.addEventListener('click', function() {
+            fotoInput.value = '';
+            fotoDisplay.innerHTML = '<div class="foto-placeholder"><i class="bi bi-person-circle"></i><p class="mt-2 mb-0 small text-muted">Sem foto</p></div>';
+            this.style.display = 'none';
+        });
+    }
+    
+    // Busca CEP - AUTOMÁTICA ao sair do campo (Tab ou clique fora)
+const cepInputElement = document.getElementById('id_cep');
+const cepFeedbackElement = document.getElementById('cep-feedback');
+const btnBuscarCEP = document.getElementById('btnBuscarCEP');
+
+if (cepInputElement) {
+    // Função para buscar CEP
+    function buscarCEPAutomatico() {
+        const cep = cepInputElement.value.replace(/\D/g, '');
+        
+        // Só busca se tiver 8 dígitos
+        if (cep.length !== 8) {
+            if (cep.length > 0 && cepFeedbackElement) {
+                cepFeedbackElement.innerHTML = '<i class="bi bi-exclamation-circle text-warning"></i> CEP incompleto';
+                cepFeedbackElement.className = 'text-warning small';
+            }
+            return;
+        }
+        
+        // Mostra loading
+        if (cepFeedbackElement) {
+            cepFeedbackElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Buscando...';
+            cepFeedbackElement.className = 'text-info small';
+        }
+        
+        // Busca na API ViaCEP
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.erro) {
+                    if (cepFeedbackElement) {
+                        cepFeedbackElement.innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i> CEP não encontrado';
+                        cepFeedbackElement.className = 'text-danger small';
+                    }
+                } else {
+                    // Preenche os campos
+                    const enderecoInput = document.getElementById('id_endereco');
+                    const cidadeInput = document.getElementById('id_cidade');
+                    const estadoInput = document.getElementById('id_estado');
+                    
+                    if (enderecoInput) enderecoInput.value = data.logradouro || '';
+                    if (cidadeInput) cidadeInput.value = data.localidade || '';
+                    if (estadoInput) estadoInput.value = data.uf || '';
+                    
+                    // Feedback de sucesso
+                    if (cepFeedbackElement) {
+                        cepFeedbackElement.innerHTML = '<i class="bi bi-check-circle text-success"></i> CEP encontrado!';
+                        cepFeedbackElement.className = 'text-success small';
+                    }
+                    
+                    // Foca no próximo campo
+                    if (data.logradouro) {
+                        const numeroInput = document.getElementById('id_numero');
+                        if (numeroInput) setTimeout(() => numeroInput.focus(), 100);
+                    } else {
+                        if (enderecoInput) setTimeout(() => enderecoInput.focus(), 100);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar CEP:', error);
+                if (cepFeedbackElement) {
+                    cepFeedbackElement.innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i> Erro na busca';
+                    cepFeedbackElement.className = 'text-danger small';
+                }
+            });
+    }
+    
+    // Busca automática ao sair do campo (Tab ou clique fora)
+    cepInputElement.addEventListener('blur', function() {
+        buscarCEPAutomatico();
+    });
+    
+    // Busca ao pressionar Enter
+    cepInputElement.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarCEPAutomatico();
+        }
+    });
+    
+    // Limpa feedback ao digitar
+    cepInputElement.addEventListener('input', function() {
+        if (cepFeedbackElement) {
+            cepFeedbackElement.innerHTML = '';
+        }
+    });
+    
+    // Botão de busca manual (mantém funcionalidade)
+    if (btnBuscarCEP) {
+        btnBuscarCEP.addEventListener('click', function() {
+            buscarCEPAutomatico();
+        });
+    }
+}
+    
+    // Modal Escola Núcleo - Salvar
+    document.getElementById('btnSalvarEscolaNucleo')?.addEventListener('click', function() {
+        const form = new FormData(document.getElementById('formEscolaNucleo'));
+        fetch('{% url "os_app:nova_escola_nucleo_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                nucleoSelect.add(new Option(d.nome, d.id, true, true));
+                bootstrap.Modal.getInstance(document.getElementById('modalEscolaNucleo')).hide();
+                document.getElementById('formEscolaNucleo').reset();
+                alert('Escola Núcleo cadastrada com sucesso!');
+                nucleoSelect.dispatchEvent(new Event('change'));
+            } else {
+                alert('Erro ao cadastrar escola núcleo. Verifique os dados.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao cadastrar escola núcleo.');
+        });
+    });
+    
+    // Modal Escola Dependente - Preparar ao abrir
+    document.getElementById('modalEscolaDependente')?.addEventListener('show.bs.modal', function() {
+        const nucleoId = nucleoSelect.value;
+        const nucleoNome = nucleoSelect.options[nucleoSelect.selectedIndex].text;
+        document.getElementById('modal_nucleo_id').value = nucleoId;
+        document.getElementById('modal_nucleo_nome_display').textContent = nucleoNome || '-';
+    });
+    
+    // Modal Escola Dependente - Salvar
+    document.getElementById('btnSalvarEscolaDependente')?.addEventListener('click', function() {
+        const form = new FormData(document.getElementById('formEscolaDependente'));
+        fetch('{% url "os_app:nova_escola_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                escolaSelect.add(new Option(d.nome, d.id, true, true));
+                bootstrap.Modal.getInstance(document.getElementById('modalEscolaDependente')).hide();
+                document.getElementById('formEscolaDependente').reset();
+                alert('Escola Dependente cadastrada com sucesso!');
+            } else {
+                alert('Erro ao cadastrar escola dependente. Verifique os dados.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao cadastrar escola dependente.');
+        });
+    });
+    
+    // ===== AUTOCOMPLETE DE BAIRRO NOS MODAIS DE ESCOLA =====
+    
+    // Função auxiliar para criar autocomplete de bairro
+    function criarAutocompleteBairro(searchId, hiddenId, resultadosId, selecionadoId) {
+        const searchInput = document.getElementById(searchId);
+        const hiddenInput = document.getElementById(hiddenId);
+        const resultados = document.getElementById(resultadosId);
+        const selecionado = document.getElementById(selecionadoId);
+        
+        if (!searchInput) return;
+        
+        let timeoutBusca;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeoutBusca);
+            const termo = this.value.trim();
+            
+            if (termo.length < 2) {
+                resultados.style.display = 'none';
+                return;
+            }
+            
+            timeoutBusca = setTimeout(() => {
+                resultados.innerHTML = '<div class="list-group-item"><i class="bi bi-hourglass-split"></i> Buscando...</div>';
+                resultados.style.display = 'block';
+                
+                fetch(`{% url 'os_app:buscar_bairros_ajax' %}?q=${encodeURIComponent(termo)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            resultados.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-info-circle"></i> Nenhum bairro encontrado. Clique no + para adicionar.</div>';
+                        } else {
+                            resultados.innerHTML = '';
+                            data.forEach(bairro => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.dataset.id = bairro.id;
+                                item.dataset.nomeCompleto = bairro.nome_completo;
+                                item.innerHTML = `<i class="bi bi-signpost"></i> ${bairro.nome_completo}`;
+                                resultados.appendChild(item);
+                                
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    searchInput.value = this.dataset.nomeCompleto;
+                                    hiddenInput.value = this.dataset.id;
+                                    resultados.style.display = 'none';
+                                    selecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${this.dataset.nomeCompleto}`;
+                                });
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        resultados.innerHTML = '<div class="list-group-item text-danger"><i class="bi bi-exclamation-circle"></i> Erro ao buscar</div>';
+                    });
+            }, 300);
+        });
+        
+        // Fechar ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !resultados.contains(e.target)) {
+                resultados.style.display = 'none';
+            }
+        });
+    }
+    
+    // Criar autocompletes para os modais de escola
+    criarAutocompleteBairro('nucleo_bairro_search', 'id_nucleo_bairro', 'nucleo_bairro_resultados', 'nucleo_bairro_selecionado');
+    criarAutocompleteBairro('dependente_bairro_search', 'id_escola_bairro', 'dependente_bairro_resultados', 'dependente_bairro_selecionado');
+    
+    // Funções globais para abrir modal e limpar (chamadas pelos botões inline)
+    window.abrirModalBairroNucleo = function() {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalBairro')).show();
+        // Marcar contexto para saber onde inserir o bairro depois
+        window.bairroContexto = 'nucleo';
+    };
+    
+    window.abrirModalBairroDependente = function() {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalBairro')).show();
+        window.bairroContexto = 'dependente';
+    };
+    
+    window.limparBairroNucleo = function() {
+        document.getElementById('nucleo_bairro_search').value = '';
+        document.getElementById('id_nucleo_bairro').value = '';
+        document.getElementById('nucleo_bairro_resultados').style.display = 'none';
+        document.getElementById('nucleo_bairro_selecionado').innerHTML = '';
+    };
+    
+    window.limparBairroDependente = function() {
+        document.getElementById('dependente_bairro_search').value = '';
+        document.getElementById('id_escola_bairro').value = '';
+        document.getElementById('dependente_bairro_resultados').style.display = 'none';
+        document.getElementById('dependente_bairro_selecionado').innerHTML = '';
+    };
+    
+    // ===== AUTOCOMPLETE DE BAIRRO (PROFESSOR) =====
+    const bairroSearch = document.getElementById('bairro_search');
+    const bairroHidden = document.getElementById('id_bairro');
+    const bairroResultados = document.getElementById('bairro_resultados');
+    const btnLimparBairro = document.getElementById('btnLimparBairro');
+    const bairroSelecionado = document.getElementById('bairro_selecionado');
+    
+    if (bairroSearch) {
+        let timeoutBusca;
+        
+        // Se já existe um bairro selecionado (edição), buscar e mostrar
+        if (bairroHidden.value) {
+            fetch(`{% url 'os_app:buscar_bairros_ajax' %}?q=id:${bairroHidden.value}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        bairroSearch.value = data[0].nome_completo;
+                        bairroSelecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${data[0].nome_completo}`;
+                    }
+                })
+                .catch(err => console.error('Erro ao carregar bairro:', err));
+        }
+        
+        // Busca em tempo real
+        bairroSearch.addEventListener('input', function() {
+            clearTimeout(timeoutBusca);
+            const termo = this.value.trim();
+            
+            if (termo.length < 2) {
+                bairroResultados.style.display = 'none';
+                return;
+            }
+            
+            timeoutBusca = setTimeout(() => {
+                bairroResultados.innerHTML = '<div class="list-group-item"><i class="bi bi-hourglass-split"></i> Buscando...</div>';
+                bairroResultados.style.display = 'block';
+                
+                fetch(`{% url 'os_app:buscar_bairros_ajax' %}?q=${encodeURIComponent(termo)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            bairroResultados.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-info-circle"></i> Nenhum bairro encontrado. Clique no + para adicionar.</div>';
+                        } else {
+                            bairroResultados.innerHTML = '';
+                            data.forEach(bairro => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.dataset.id = bairro.id;
+                                item.dataset.nome = bairro.nome;
+                                item.dataset.nomeCompleto = bairro.nome_completo;
+                                item.innerHTML = `<i class="bi bi-signpost"></i> ${bairro.nome_completo}`;
+                                bairroResultados.appendChild(item);
+                                
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    bairroSearch.value = this.dataset.nomeCompleto;
+                                    bairroHidden.value = this.dataset.id;
+                                    bairroResultados.style.display = 'none';
+                                    bairroSelecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${this.dataset.nomeCompleto}`;
+                                });
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        bairroResultados.innerHTML = '<div class="list-group-item text-danger"><i class="bi bi-exclamation-circle"></i> Erro ao buscar</div>';
+                    });
+            }, 300);
+        });
+        
+        // Fechar resultados ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!bairroSearch.contains(e.target) && !bairroResultados.contains(e.target)) {
+                bairroResultados.style.display = 'none';
+            }
+        });
+    }
+    
+    // Limpar seleção de bairro
+    btnLimparBairro?.addEventListener('click', function() {
+        bairroSearch.value = '';
+        bairroHidden.value = '';
+        bairroResultados.style.display = 'none';
+        bairroSelecionado.innerHTML = '';
+    });
+    
+    // Modal Bairro - Máscara UF
+    const modalBairroEstado = document.getElementById('modal_bairro_estado');
+    if (modalBairroEstado) {
+        modalBairroEstado.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // Modal Bairro - Salvar
+    document.getElementById('btnSalvarBairro')?.addEventListener('click', function() {
+        const form = new FormData(document.getElementById('formNovoBairro'));
+        const btnSalvar = this;
+        const btnTextoOriginal = btnSalvar.innerHTML;
+        const erroDiv = document.getElementById('bairro_erro');
+        
+        // Validação
+        const nome = form.get('nome');
+        if (!nome || nome.trim() === '') {
+            erroDiv.innerHTML = 'Por favor, preencha o nome do bairro.';
+            erroDiv.style.display = 'block';
+            return;
+        }
+        
+        // Desabilita botão
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+        erroDiv.style.display = 'none';
+        
+        fetch('{% url "os_app:novo_bairro_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(r => {
+            if (!r.ok) throw new Error(`Erro HTTP! Status: ${r.status}`);
+            return r.json();
+        })
+        .then(d => {
+            if (d.success) {
+                // Detectar qual contexto está sendo usado
+                const contexto = window.bairroContexto || 'professor';
+                
+                if (contexto === 'nucleo') {
+                    // Modal de Escola Núcleo
+                    document.getElementById('nucleo_bairro_search').value = d.nome_completo;
+                    document.getElementById('id_nucleo_bairro').value = d.id;
+                    document.getElementById('nucleo_bairro_selecionado').innerHTML = `<i class="bi bi-check-circle text-success"></i> ${d.nome_completo}`;
+                } else if (contexto === 'dependente') {
+                    // Modal de Escola Dependente
+                    document.getElementById('dependente_bairro_search').value = d.nome_completo;
+                    document.getElementById('id_escola_bairro').value = d.id;
+                    document.getElementById('dependente_bairro_selecionado').innerHTML = `<i class="bi bi-check-circle text-success"></i> ${d.nome_completo}`;
+                } else {
+                    // Cadastro de Professor
+                    bairroSearch.value = d.nome_completo;
+                    bairroHidden.value = d.id;
+                    bairroSelecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${d.nome_completo}`;
+                }
+                
+                // Fecha modal
+                bootstrap.Modal.getInstance(document.getElementById('modalBairro')).hide();
+                document.getElementById('formNovoBairro').reset();
+                alert('Bairro cadastrado com sucesso!');
+                
+                // Limpa contexto
+                window.bairroContexto = null;
+            } else {
+                console.error('Erro ao cadastrar bairro:', d.errors);
+                let mensagemErro = 'Erro ao cadastrar bairro:<br>';
+                if (d.errors) {
+                    for (let campo in d.errors) {
+                        mensagemErro += `- ${campo}: ${d.errors[campo]}<br>`;
+                    }
+                }
+                erroDiv.innerHTML = mensagemErro;
+                erroDiv.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            erroDiv.innerHTML = 'Erro ao cadastrar bairro: ' + error.message;
+            erroDiv.style.display = 'block';
+        })
+        .finally(() => {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = btnTextoOriginal;
+        });
+    });
+
+    // Modal Cargo
+    document.getElementById('btnSalvarCargo')?.addEventListener('click', function() {
+        const form = new FormData(document.getElementById('formNovoCargo'));
+        fetch('{% url "os_app:novo_cargo_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                const cargoSelect = document.getElementById('id_cargo');
+                cargoSelect.add(new Option(d.nome, d.id, true, true));
+                bootstrap.Modal.getInstance(document.getElementById('modalCargo')).hide();
+                document.getElementById('formNovoCargo').reset();
+                alert('Cargo cadastrado com sucesso!');
+            } else {
+                document.getElementById('cargo_erro').innerHTML = 'Erro ao cadastrar cargo';
+                document.getElementById('cargo_erro').style.display = 'block';
+            }
+        });
+    });
+    
+    // ===== ABA TURMAS =====
+    
+    // Busca de Professor Substituto
+    const substitutoSearch = document.getElementById('substituto_search');
+    const substitutoHidden = document.getElementById('substituto');
+    const substitutoResultados = document.getElementById('substituto_resultados');
+    const btnLimparSubstituto = document.getElementById('btnLimparSubstituto');
+    
+    if (substitutoSearch) {
+        let timeoutBusca;
+        
+        substitutoSearch.addEventListener('input', function() {
+            clearTimeout(timeoutBusca);
+            const termo = this.value.trim();
+            
+            if (termo.length < 2) {
+                substitutoResultados.style.display = 'none';
+                return;
+            }
+            
+            timeoutBusca = setTimeout(() => {
+                substitutoResultados.innerHTML = '<div class="list-group-item"><i class="bi bi-hourglass-split"></i> Buscando...</div>';
+                substitutoResultados.style.display = 'block';
+                
+                // Busca real de professores
+                fetch(`{% url 'os_app:buscar_professores_ajax' %}?q=${encodeURIComponent(termo)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            substitutoResultados.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-info-circle"></i> Nenhum professor encontrado</div>';
+                        } else {
+                            substitutoResultados.innerHTML = '';
+                            data.forEach(prof => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.dataset.id = prof.id;
+                                item.dataset.nome = prof.nome;
+                                item.innerHTML = `<i class="bi bi-person"></i> ${prof.nome} - Mat: ${prof.matricula}`;
+                                substitutoResultados.appendChild(item);
+                                
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    substitutoSearch.value = this.dataset.nome;
+                                    substitutoHidden.value = this.dataset.id;
+                                    substitutoResultados.style.display = 'none';
+                                });
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        substitutoResultados.innerHTML = '<div class="list-group-item text-danger"><i class="bi bi-exclamation-circle"></i> Erro ao buscar</div>';
+                    });
+            }, 300);
+        });
+        
+        // Fechar resultados ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!substitutoSearch.contains(e.target) && !substitutoResultados.contains(e.target)) {
+                substitutoResultados.style.display = 'none';
+            }
+        });
+    }
+    
+    // Limpar seleção de substituto
+    btnLimparSubstituto?.addEventListener('click', function() {
+        substitutoSearch.value = '';
+        substitutoHidden.value = '';
+        substitutoResultados.style.display = 'none';
+    });
+    
+    // Modal Nova Série
+    document.getElementById('btnSalvarSerie')?.addEventListener('click', function() {
+        const form = new FormData(document.getElementById('formNovaSerie'));
+        const btnSalvar = this;
+        const btnTextoOriginal = btnSalvar.innerHTML;
+        const erroDiv = document.getElementById('serie_erro');
+        
+        // Validação básica
+        const nome = form.get('nome');
+        if (!nome || nome.trim() === '') {
+            erroDiv.innerHTML = 'Por favor, preencha o nome da série.';
+            erroDiv.style.display = 'block';
+            return;
+        }
+        
+        // Desabilita botão e mostra loading
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+        erroDiv.style.display = 'none';
+        
+        fetch('{% url "os_app:nova_serie_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(r => {
+            if (!r.ok) {
+                return r.json().then(data => {
+                    throw { isValidationError: true, data: data };
+                });
+            }
+            return r.json();
+        })
+        .then(d => {
+            if (d.success) {
+                // Recarregar a lista de séries
+                carregarSeries();
+                
+                // Selecionar a série recém-criada
+                setTimeout(() => {
+                    const serieSelect = document.getElementById('serie');
+                    if (serieSelect) {
+                        serieSelect.value = d.id;
+                    }
+                }, 200);
+                
+                bootstrap.Modal.getInstance(document.getElementById('modalNovaSerie')).hide();
+                document.getElementById('formNovaSerie').reset();
+                alert('Série cadastrada com sucesso!');
+            } else {
+                console.error('Erro ao cadastrar série:', d.errors);
+                let mensagemErro = 'Erro ao cadastrar série:<br>';
+                if (d.errors) {
+                    for (let campo in d.errors) {
+                        mensagemErro += `<strong>${campo}:</strong> ${d.errors[campo]}<br>`;
+                    }
+                }
+                erroDiv.innerHTML = mensagemErro;
+                erroDiv.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Erro completo:', error);
+            if (error.isValidationError && error.data) {
+                let mensagemErro = 'Erro ao cadastrar série:<br>';
+                if (error.data.errors) {
+                    for (let campo in error.data.errors) {
+                        const erros = Array.isArray(error.data.errors[campo]) ? 
+                                     error.data.errors[campo].join(', ') : 
+                                     error.data.errors[campo];
+                        mensagemErro += `<strong>${campo}:</strong> ${erros}<br>`;
+                    }
+                } else if (error.data.error) {
+                    mensagemErro += error.data.error;
+                }
+                erroDiv.innerHTML = mensagemErro;
+                erroDiv.style.display = 'block';
+            } else {
+                erroDiv.innerHTML = 'Erro ao cadastrar série: ' + error.message + '<br>Verifique o console do navegador (F12) para mais detalhes.';
+                erroDiv.style.display = 'block';
+            }
+        })
+        .finally(() => {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = btnTextoOriginal;
+        });
+    });
+    
+    // Modal Novo Motivo
+    // Modal Novo Motivo
+    document.getElementById('btnSalvarMotivo')?.addEventListener('click', function() {
+        const form = new FormData(document.getElementById('formNovoMotivo'));
+        const btnSalvar = this;
+        const btnTextoOriginal = btnSalvar.innerHTML;
+        const erroDiv = document.getElementById('motivo_erro');
+        
+        // Validação
+        const descricao = form.get('descricao');
+        if (!descricao || descricao.trim() === '') {
+            erroDiv.innerHTML = 'Por favor, preencha a descrição do motivo.';
+            erroDiv.style.display = 'block';
+            return;
+        }
+        
+        // Desabilita botão
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+        erroDiv.style.display = 'none';
+        
+        fetch('{% url "os_app:novo_motivo_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(r => {
+            if (!r.ok) {
+                return r.json().then(data => {
+                    throw { isValidationError: true, data: data };
+                });
+            }
+            return r.json();
+        })
+        .then(d => {
+            if (d.success) {
+                // Recarregar a lista de motivos
+                carregarMotivos();
+                
+                // Selecionar o motivo recém-criado
+                setTimeout(() => {
+                    const motivoSelect = document.getElementById('motivo');
+                    if (motivoSelect) {
+                        motivoSelect.value = d.id;
+                    }
+                }, 200);
+                
+                bootstrap.Modal.getInstance(document.getElementById('modalNovoMotivo')).hide();
+                document.getElementById('formNovoMotivo').reset();
+                alert('Motivo cadastrado com sucesso!');
+            } else {
+                console.error('Erro ao cadastrar motivo:', d.errors);
+                let mensagemErro = 'Erro ao cadastrar motivo:<br>';
+                if (d.errors) {
+                    for (let campo in d.errors) {
+                        const erros = Array.isArray(d.errors[campo]) ? 
+                                     d.errors[campo].join(', ') : 
+                                     d.errors[campo];
+                        mensagemErro += `<strong>${campo}:</strong> ${erros}<br>`;
+                    }
+                }
+                erroDiv.innerHTML = mensagemErro;
+                erroDiv.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            if (error.isValidationError && error.data && error.data.errors) {
+                let mensagemErro = 'Erro ao cadastrar motivo:<br>';
+                for (let campo in error.data.errors) {
+                    const erros = Array.isArray(error.data.errors[campo]) ? 
+                                 error.data.errors[campo].join(', ') : 
+                                 error.data.errors[campo];
+                    mensagemErro += `<strong>${campo}:</strong> ${erros}<br>`;
+                }
+                erroDiv.innerHTML = mensagemErro;
+                erroDiv.style.display = 'block';
+            } else {
+                erroDiv.innerHTML = 'Erro ao cadastrar motivo: ' + error.message;
+                erroDiv.style.display = 'block';
+            }
+        })
+        .finally(() => {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = btnTextoOriginal;
+        });
+    });
+    
+    // Habilitar/desabilitar campo Motivo baseado em "Em Sala"
+    const emSalaSelect = document.getElementById('em_sala');
+    const motivoSelect = document.getElementById('motivo');
+    
+    if (emSalaSelect && motivoSelect) {
+        emSalaSelect.addEventListener('change', function() {
+            if (this.value === 'nao') {
+                motivoSelect.disabled = false;
+                motivoSelect.parentElement.parentElement.querySelector('label').classList.add('required-field');
+            } else {
+                motivoSelect.disabled = true;
+                motivoSelect.value = '';
+                motivoSelect.parentElement.parentElement.querySelector('label').classList.remove('required-field');
+            }
+        });
+        
+        // Estado inicial
+        motivoSelect.disabled = true;
+    }
+});
+</script>
+
+<script>
+{% if editando %}
+    // INICIALIZAÇÃO DE CAMPOS AO EDITAR
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔄 Modo EDIÇÃO ativado');
+        
+        // 1. BAIRRO
+        {% if professor.bairro %}
+        const bairroInput = document.getElementById('bairro_search');
+        if (bairroInput) {
+            bairroInput.value = '{{ professor.bairro.nome }}';
+            document.getElementById('id_bairro').value = '{{ professor.bairro.id }}';
+            console.log('✅ Bairro inicializado:', '{{ professor.bairro.nome }}');
+        }
+        {% endif %}
+        
+        // 2. GARANTIR VISIBILIDADE
+        ['id_situacao_funcional', 'id_serie', 'id_modalidade', 'id_turno', 'id_em_sala', 'id_substituto', 'id_observacao_turmas'].forEach(function(id) {
+            const campo = document.getElementById(id);
+            if (campo) {
+                campo.style.display = 'block';
+                campo.style.visibility = 'visible';
+                const container = campo.closest('.col-md-6, .col-md-4, .col-md-12, .col-12');
+                if (container) {
+                    container.style.display = 'block';
+                    container.style.visibility = 'visible';
+                }
+                if (campo.value) console.log('✅', id, '=', campo.value);
+            }
+        });
+        
+        console.log('✅ Campos inicializados!');
+    });
+{% endif %}
+</script>
+
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}Editar Usuário{% endblock %}
+{% block page_title %}Editar Usuário: {{ usuario_edit.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Coluna Esquerda -->
+            <div class="col-lg-6">
+                <!-- Dados da Conta -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Dados da Conta</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Usuário</label>
+                                {{ user_form.username }}
+                                {% if user_form.username.errors %}
+                                    <div class="text-danger">{{ user_form.username.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                {{ user_form.email }}
+                                {% if user_form.email.errors %}
+                                    <div class="text-danger">{{ user_form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nome</label>
+                                {{ user_form.first_name }}
+                                {% if user_form.first_name.errors %}
+                                    <div class="text-danger">{{ user_form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sobrenome</label>
+                                {{ user_form.last_name }}
+                                {% if user_form.last_name.errors %}
+                                    <div class="text-danger">{{ user_form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações Profissionais -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-briefcase me-2"></i>Informações Profissionais</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Usuário</label>
+                            {{ perfil_form.tipo_usuario }}
+                            {% if perfil_form.tipo_usuario.errors %}
+                                <div class="text-danger">{{ perfil_form.tipo_usuario.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cargo/Função</label>
+                            {{ perfil_form.cargo_funcao }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Departamento</label>
+                            {{ perfil_form.departamento }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Escola Vinculada</label>
+                            {{ perfil_form.escola_vinculada }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Núcleo Vinculado</label>
+                            {{ perfil_form.nucleo_vinculado }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contato -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Contato</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Telefone</label>
+                            {{ perfil_form.telefone }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Celular</label>
+                            {{ perfil_form.celular }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Foto</label>
+                            {{ perfil_form.foto }}
+                            {% if perfil_form.instance.foto %}
+                                <div class="mt-2">
+                                    <img src="{{ perfil_form.instance.foto.url }}" alt="Foto atual" 
+                                         class="rounded" style="max-width: 100px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita -->
+            <div class="col-lg-6">
+                <!-- Permissões - Professores -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Permissões - Professores</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_criar_professor }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_criar_professor.id_for_label }}">
+                                Pode Criar Professores
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_editar_professor }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_editar_professor.id_for_label }}">
+                                Pode Editar Professores
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_excluir_professor }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_excluir_professor.id_for_label }}">
+                                Pode Excluir Professores
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissões - Escolas Núcleo -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-building me-2"></i>Permissões - Escolas Núcleo</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_criar_escola_nucleo }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_criar_escola_nucleo.id_for_label }}">
+                                Pode Criar Escolas Núcleo
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_editar_escola_nucleo }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_editar_escola_nucleo.id_for_label }}">
+                                Pode Editar Escolas Núcleo
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_excluir_escola_nucleo }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_excluir_escola_nucleo.id_for_label }}">
+                                Pode Excluir Escolas Núcleo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissões - Escolas Dependentes -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-buildings me-2"></i>Permissões - Escolas Dependentes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_criar_escola_dependente }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_criar_escola_dependente.id_for_label }}">
+                                Pode Criar Escolas Dependentes
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_editar_escola_dependente }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_editar_escola_dependente.id_for_label }}">
+                                Pode Editar Escolas Dependentes
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_excluir_escola_dependente }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_excluir_escola_dependente.id_for_label }}">
+                                Pode Excluir Escolas Dependentes
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissões Gerais -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Permissões Gerais</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_gerar_relatorios }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_gerar_relatorios.id_for_label }}">
+                                Pode Gerar Relatórios
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.pode_exportar_dados }}
+                            <label class="form-check-label" for="{{ perfil_form.pode_exportar_dados.id_for_label }}">
+                                Pode Exportar Dados
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ user_form.is_staff }}
+                            <label class="form-check-label" for="{{ user_form.is_staff.id_for_label }}">
+                                Acesso ao Admin
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            {{ perfil_form.ativo }}
+                            <label class="form-check-label" for="{{ perfil_form.ativo.id_for_label }}">
+                                Usuário Ativo (pode acessar o sistema)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-card-text me-2"></i>Observações</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ perfil_form.observacoes }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'os_app:detalhe_usuario' usuario_edit.id %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

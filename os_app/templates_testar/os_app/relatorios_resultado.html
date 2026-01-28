@@ -1,0 +1,338 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}Resultado do Relatório - SISPROF{% endblock %}
+{% block page_title %}Resultado do Relatório{% endblock %}
+
+{% block content %}
+
+<!-- Estatísticas -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h3 class="mb-0">{{ total }}</h3>
+                <small>Total de Professores</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h3 class="mb-0">{{ com_escola }}</h3>
+                <small>Com Escola</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h3 class="mb-0">{{ sem_escola }}</h3>
+                <small>Sem Escola</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros Aplicados -->
+{% if filtros_aplicados %}
+<div class="alert alert-info">
+    <strong><i class="bi bi-funnel"></i> Filtros aplicados:</strong>
+    <ul class="mb-0 mt-2">
+        {% for filtro in filtros_aplicados %}
+            <li>{{ filtro }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Campos Selecionados -->
+<div class="alert alert-success">
+    <strong><i class="bi bi-list-check"></i> Campos exibidos ({{ campos_selecionados|length }}):</strong>
+    {% for campo in campos_selecionados %}
+        <span class="badge bg-success">{{ campos_labels|dictsort:campo }}</span>
+    {% endfor %}
+</div>
+
+<!-- Botões de Ação -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="btn-group" role="group">
+            <a href="{% url 'os_app:relatorios_filtros' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Voltar aos Filtros
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+            <a href="{% url 'os_app:relatorios_pdf' %}?{{ request.GET.urlencode }}" 
+               class="btn btn-outline-danger" 
+               target="_blank">
+                <i class="bi bi-file-pdf"></i> Exportar PDF
+            </a>
+            <button onclick="exportarExcel()" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Resultados -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0" style="font-size: 0.85rem;">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        {% for campo in campos_selecionados %}
+                            <th>
+                                {% if campo == 'id' %}ID
+                                {% elif campo == 'nome' %}Nome
+                                {% elif campo == 'cpf' %}CPF
+                                {% elif campo == 'email' %}Email
+                                {% elif campo == 'telefone' %}Telefone
+                                {% elif campo == 'celular' %}Celular
+                                {% elif campo == 'cargo' %}Cargo
+                                {% elif campo == 'situacao_funcional' %}Situação
+                                {% elif campo == 'matricula' %}Matrícula
+                                {% elif campo == 'ref_global' %}Ref. Global
+                                {% elif campo == 'area_atuacao' %}Área
+                                {% elif campo == 'modalidade' %}Modalidade
+                                {% elif campo == 'turno' %}Turno
+                                {% elif campo == 'serie' %}Série
+                                {% elif campo == 'em_sala' %}Em Sala
+                                {% elif campo == 'escola' %}Escola
+                                {% elif campo == 'escola_nucleo' %}Núcleo
+                                {% elif campo == 'endereco_escola' %}End. Escola
+                                {% elif campo == 'zona_escola' %}Zona
+                                {% elif campo == 'endereco' %}Endereço
+                                {% elif campo == 'bairro' %}Bairro
+                                {% elif campo == 'cidade' %}Cidade
+                                {% elif campo == 'estado' %}Estado
+                                {% elif campo == 'cep' %}CEP
+                                {% elif campo == 'data_nascimento' %}Dt. Nasc.
+                                {% elif campo == 'sexo' %}Sexo
+                                {% elif campo == 'data_cadastro' %}Dt. Cadastro
+                                {% else %}{{ campo }}
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                        <th style="width: 80px;" class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for professor in professores %}
+                    <tr>
+                        <!-- Contador -->
+                        <td>{{ forloop.counter }}</td>
+                        
+                        <!-- Campos Dinâmicos -->
+                        {% for campo in campos_selecionados %}
+                            <td>
+                                {% if campo == 'id' %}
+                                    <span class="badge bg-secondary">#{{ professor.id }}</span>
+                                    
+                                {% elif campo == 'nome' %}
+                                    <div class="fw-bold">{{ professor.nome|truncatechars:30 }}</div>
+                                    
+                                {% elif campo == 'cpf' %}
+                                    {% if professor.cpf_formatado %}
+                                        {{ professor.cpf_formatado }}
+                                    {% else %}
+                                        {{ professor.cpf }}
+                                    {% endif %}
+                                    
+                                {% elif campo == 'email' %}
+                                    <small>{{ professor.email|truncatechars:25 }}</small>
+                                    
+                                {% elif campo == 'telefone' %}
+                                    {{ professor.telefone|default:"-" }}
+                                    
+                                {% elif campo == 'celular' %}
+                                    {{ professor.celular|default:"-" }}
+                                    
+                                {% elif campo == 'cargo' %}
+                                    {{ professor.cargo.nome|default:"-"|truncatechars:20 }}
+                                    
+                                {% elif campo == 'situacao_funcional' %}
+                                    {% if professor.situacao_funcional %}
+                                        <span class="badge bg-info text-dark">
+                                            {{ professor.get_situacao_funcional_display }}
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    
+                                {% elif campo == 'matricula' %}
+                                    {{ professor.matricula|default:"-" }}
+                                    
+                                {% elif campo == 'ref_global' %}
+                                    {% if professor.ref_global %}
+                                        <span class="badge bg-secondary">{{ professor.ref_global }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    
+                                {% elif campo == 'area_atuacao' %}
+                                    {% if professor.area_atuacao %}
+                                        <span class="badge bg-warning text-dark">
+                                            {{ professor.get_area_atuacao_display|truncatechars:15 }}
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+
+                                    {% if 'materias' in campos_selecionados %}
+                                    <td>
+                                     {% if professor.materias %}
+                                    {{ professor.get_materias_display|join:", " }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    </td>
+                                {% endif %}
+                                    
+                                {% elif campo == 'modalidade' %}
+                                    {{ professor.get_modalidade_display|default:"-" }}
+                                    
+                                {% elif campo == 'turno' %}
+                                    {{ professor.get_turno_display|default:"-" }}
+                                    
+                                {% elif campo == 'serie' %}
+                                    {{ professor.serie.nome|default:"-" }}
+                                    
+                                {% elif campo == 'em_sala' %}
+                                    {% if professor.em_sala %}
+                                        <span class="badge bg-success">Sim</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Não</span>
+                                    {% endif %}
+                                    
+                                {% elif campo == 'escola' %}
+                                    {% if professor.escola %}
+                                        <i class="bi bi-building text-success"></i>
+                                        {{ professor.escola.nome|truncatechars:20 }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                    
+                                {% elif campo == 'escola_nucleo' %}
+                                    {% if professor.escola_nucleo %}
+                                        <i class="bi bi-buildings text-primary"></i>
+                                        {{ professor.escola_nucleo.nome|truncatechars:20 }}
+                                    {% elif professor.escola and professor.escola.nucleo %}
+                                        <i class="bi bi-buildings text-muted"></i>
+                                        <small>{{ professor.escola.nucleo.nome|truncatechars:15 }}</small>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    
+                                {% elif campo == 'endereco_escola' %}
+                                    {% if professor.escola %}
+                                        {{ professor.escola.endereco|default:"-"|truncatechars:20 }}
+                                        {% if professor.escola.numero %}, {{ professor.escola.numero }}{% endif %}
+                                    {% elif professor.escola_nucleo %}
+                                        {{ professor.escola_nucleo.endereco|default:"-"|truncatechars:20 }}
+                                        {% if professor.escola_nucleo.numero %}, {{ professor.escola_nucleo.numero }}{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    
+                                {% elif campo == 'zona_escola' %}
+                                    {% if professor.escola %}
+                                        <span class="badge bg-success">{{ professor.escola.get_zona_display }}</span>
+                                    {% elif professor.escola_nucleo %}
+                                        <span class="badge bg-primary">{{ professor.escola_nucleo.get_zona_display }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    
+                                {% elif campo == 'endereco' %}
+                                    {{ professor.endereco|default:"-"|truncatechars:25 }}
+                                    
+                                {% elif campo == 'bairro' %}
+                                    {{ professor.bairro.nome|default:"-" }}
+                                    
+                                {% elif campo == 'cidade' %}
+                                    {{ professor.cidade|default:"-" }}
+                                    
+                                {% elif campo == 'estado' %}
+                                    {{ professor.estado|default:"-" }}
+                                    
+                                {% elif campo == 'cep' %}
+                                    {{ professor.cep|default:"-" }}
+                                    
+                                {% elif campo == 'data_nascimento' %}
+                                    {{ professor.data_nascimento|date:"d/m/Y"|default:"-" }}
+                                    
+                                {% elif campo == 'sexo' %}
+                                    {{ professor.get_sexo_display|default:"-" }}
+                                    
+                                {% elif campo == 'data_cadastro' %}
+                                    {{ professor.data_cadastro|date:"d/m/Y"|default:"-" }}
+                                    
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        
+                        <!-- Ações -->
+                        <td class="text-center">
+                            <a href="{% url 'os_app:detalhe_professor' professor.id %}" 
+                               class="btn btn-sm btn-outline-primary"
+                               title="Ver detalhes"
+                               style="font-size: 0.75rem; padding: 2px 6px;">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ campos_selecionados|length|add:2 }}" class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                            <p class="text-muted mt-3">Nenhum professor encontrado com os filtros aplicados.</p>
+                            <a href="{% url 'os_app:relatorios_filtros' %}" class="btn btn-primary">
+                                <i class="bi bi-arrow-left"></i> Ajustar Filtros
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if professores %}
+    <div class="card-footer bg-light">
+        <small class="text-muted">
+            Total de registros: <strong>{{ professores.count }}</strong>
+        </small>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@media print {
+    .btn, .btn-group, .card-footer, .alert {
+        display: none !important;
+    }
+    
+    .table {
+        font-size: 8pt !important;
+    }
+    
+    .badge {
+        border: 1px solid #000 !important;
+        background: white !important;
+        color: black !important;
+    }
+}
+</style>
+
+<script>
+function exportarExcel() {
+    alert('Funcionalidade de exportação para Excel em desenvolvimento.\nPor enquanto, use Imprimir ou Exportar PDF.');
+}
+</script>
+
+{% endblock %}

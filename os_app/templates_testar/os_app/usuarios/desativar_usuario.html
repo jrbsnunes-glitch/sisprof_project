@@ -1,0 +1,73 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}{{ acao|title }} Usuário{% endblock %}
+{% block page_title %}{{ acao|title }} Usuário{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header {% if acao == 'desativar' %}bg-warning{% else %}bg-success{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if acao == 'desativar' %}exclamation-triangle{% else %}check-circle{% endif %} me-2"></i>
+                        Confirmar {{ acao|title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-circle display-1 {% if acao == 'desativar' %}text-warning{% else %}text-success{% endif %}"></i>
+                    </div>
+
+                    <div class="alert {% if acao == 'desativar' %}alert-warning{% else %}alert-success{% endif %}">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Tem certeza que deseja {{ acao }} este usuário?
+                        </h6>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Usuário:</strong> {{ usuario_acao.username }}<br>
+                            <strong>Nome:</strong> {{ usuario_acao.get_full_name|default:"-" }}<br>
+                            <strong>Email:</strong> {{ usuario_acao.email|default:"-" }}
+                        </p>
+                    </div>
+
+                    {% if acao == 'desativar' %}
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-info-circle me-2"></i>Atenção:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>O usuário não poderá mais fazer login no sistema</li>
+                            <li>Todos os dados serão mantidos</li>
+                            <li>Você pode reativar o usuário a qualquer momento</li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <strong><i class="bi bi-check-circle me-2"></i>Ao ativar:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>O usuário poderá fazer login novamente</li>
+                            <li>Todas as permissões serão restauradas</li>
+                            <li>O acesso será imediato</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="d-flex justify-content-between gap-2">
+                            <a href="{% url 'os_app:lista_usuarios' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn {% if acao == 'desativar' %}btn-warning{% else %}btn-success{% endif %}">
+                                <i class="bi bi-{% if acao == 'desativar' %}slash-circle{% else %}check-circle{% endif %} me-1"></i>
+                                Confirmar {{ acao|title }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

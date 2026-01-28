@@ -1,0 +1,275 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}Logs de Auditoria{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-clock-history"></i> Logs de Auditoria</h2>
+            <p class="text-muted">Histórico de ações no sistema</p>
+        </div>
+        <div>
+            <a href="{% url 'os_app:logs_exportar' %}?{{ request.GET.urlencode }}" 
+               class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Exportar CSV
+            </a>
+            <a href="{% url 'os_app:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">
+                        <i class="bi bi-list-ul"></i> Total de Logs
+                    </h5>
+                    <h2 class="mb-0">{{ total_logs|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">
+                        <i class="bi bi-calendar-day"></i> Logs Hoje
+                    </h5>
+                    <h2 class="mb-0">{{ logs_hoje|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-info">
+                        <i class="bi bi-bar-chart"></i> Ações Mais Comuns (7 dias)
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for acao in acoes_comuns %}
+                        <span class="badge bg-info">
+                            {{ acao.acao }}: {{ acao.total }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel"></i> Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Usuário</label>
+                    <select name="usuario" class="form-select">
+                        <option value="">Todos</option>
+                        {% for user in usuarios %}
+                        <option value="{{ user.id }}" 
+                                {% if request.GET.usuario == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Ação</label>
+                    <select name="acao" class="form-select">
+                        <option value="">Todas</option>
+                        {% for value, label in acao_choices %}
+                        <option value="{{ value }}" 
+                                {% if request.GET.acao == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Modelo</label>
+                    <select name="modelo" class="form-select">
+                        <option value="">Todos</option>
+                        {% for value, label in modelo_choices %}
+                        <option value="{{ value }}" 
+                                {% if request.GET.modelo == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Período</label>
+                    <select name="periodo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="hoje" {% if request.GET.periodo == 'hoje' %}selected{% endif %}>Hoje</option>
+                        <option value="semana" {% if request.GET.periodo == 'semana' %}selected{% endif %}>Esta Semana</option>
+                        <option value="mes" {% if request.GET.periodo == 'mes' %}selected{% endif %}>Este Mês</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="busca" class="form-control" 
+                           placeholder="Buscar em descrição..." 
+                           value="{{ request.GET.busca }}">
+                </div>
+
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'os_app:logs_auditoria' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Logs -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="5%">ID</th>
+                            <th width="12%">Data/Hora</th>
+                            <th width="10%">Usuário</th>
+                            <th width="10%">Ação</th>
+                            <th width="10%">Modelo</th>
+                            <th width="35%">Descrição</th>
+                            <th width="10%">IP</th>
+                            <th width="5%">Status</th>
+                            <th width="3%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in page_obj %}
+                        <tr>
+                            <td>{{ log.id }}</td>
+                            <td>
+                                <small>{{ log.data_hora|date:"d/m/Y" }}<br>
+                                {{ log.data_hora|date:"H:i:s" }}</small>
+                            </td>
+                            <td>
+                                {% if log.usuario %}
+                                    <i class="bi bi-person-fill"></i> {{ log.usuario.username }}
+                                {% else %}
+                                    <i class="bi bi-robot"></i> Sistema
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.acao == 'LOGIN' %}
+                                    <span class="badge bg-success">{{ log.get_acao_display }}</span>
+                                {% elif log.acao == 'LOGOUT' %}
+                                    <span class="badge bg-secondary">{{ log.get_acao_display }}</span>
+                                {% elif log.acao == 'CREATE' %}
+                                    <span class="badge bg-primary">{{ log.get_acao_display }}</span>
+                                {% elif log.acao == 'UPDATE' %}
+                                    <span class="badge bg-warning">{{ log.get_acao_display }}</span>
+                                {% elif log.acao == 'DELETE' %}
+                                    <span class="badge bg-danger">{{ log.get_acao_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-info">{{ log.get_acao_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.modelo %}
+                                    {{ log.get_modelo_display }}
+                                    {% if log.objeto_id %}
+                                        <small class="text-muted">#{{ log.objeto_id }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ log.descricao|truncatechars:80 }}
+                                {% if log.objeto_repr %}
+                                    <br><small class="text-muted">{{ log.objeto_repr|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ log.ip_address|default:"-" }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if log.sucesso %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'os_app:log_detalhe' log.id %}" 
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="Ver Detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i> Nenhum log encontrado
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            Primeira
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            Próxima
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            Última
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

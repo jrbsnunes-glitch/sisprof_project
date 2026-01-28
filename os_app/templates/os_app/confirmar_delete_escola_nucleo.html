@@ -1,0 +1,93 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}Confirmar Exclusão - Escola Núcleo{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão - Escola Núcleo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if pode_deletar %}
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-octagon"></i> Atenção!
+                        </h5>
+                        <p>Você está prestes a <strong>excluir permanentemente</strong> a escola núcleo:</p>
+                        <hr>
+                        <div class="mb-3">
+                            <p class="mb-2">
+                                <strong><i class="bi bi-buildings"></i> Nome:</strong> {{ escola.nome }}
+                            </p>
+                            {% if escola.codigo %}
+                            <p class="mb-2">
+                                <strong><i class="bi bi-tag"></i> Código:</strong> {{ escola.codigo }}
+                            </p>
+                            {% endif %}
+                            {% if escola.codigo_inep %}
+                            <p class="mb-2">
+                                <strong><i class="bi bi-card-heading"></i> INEP:</strong> {{ escola.codigo_inep }}
+                            </p>
+                            {% endif %}
+                            <p class="mb-2">
+                                <strong><i class="bi bi-geo-alt"></i> Cidade/Estado:</strong> {{ escola.cidade }}/{{ escola.estado }}
+                            </p>
+                        </div>
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-info-circle"></i> Esta ação <strong>não pode ser desfeita</strong>. 
+                            Todos os dados da escola núcleo serão removidos permanentemente do sistema.
+                        </p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'os_app:lista_escolas_nucleo' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                    
+                    {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle"></i> Não é possível excluir!
+                        </h5>
+                        <p>A escola núcleo <strong>{{ escola.nome }}</strong> não pode ser excluída porque:</p>
+                        <hr>
+                        <ul class="mb-0">
+                            {% if num_dependentes > 0 %}
+                            <li>Há <strong>{{ num_dependentes }}</strong> escola(s) dependente(s) vinculada(s)</li>
+                            {% endif %}
+                            {% if num_professores > 0 %}
+                            <li>Há <strong>{{ num_professores }}</strong> professor(es) vinculado(s)</li>
+                            {% endif %}
+                        </ul>
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-lightbulb"></i> <strong>Sugestão:</strong> 
+                            Remova ou transfira os vínculos antes de excluir esta escola núcleo.
+                        </p>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="{% url 'os_app:lista_escolas_nucleo' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar à Lista
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

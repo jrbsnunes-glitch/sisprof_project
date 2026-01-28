@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Ordens de Serviço</h2>
+    <a href="{% url 'os_app:nova_os' %}" class="btn btn-primary mb-3">Nova OS</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Descrição</th>
+                <th>Data Abertura</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for os in ordens %}
+            <tr>
+                <td>{{ os.id }}</td>
+                <td>{{ os.cliente.nome }}</td>
+                <td>{{ os.descricao|truncatechars:50 }}</td>
+                <td>{{ os.data_abertura|date:"d/m/Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'os_app:detalhe_os' os.id %}" class="btn btn-info btn-sm">Ver</a>
+                    <a href="{% url 'os_app:editar_os' os.id %}" class="btn btn-warning btn-sm">Editar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Nenhuma ordem de serviço cadastrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

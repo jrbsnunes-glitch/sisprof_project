@@ -1,0 +1,437 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}Lista de Professores - SISPROF{% endblock %}
+{% block page_title %}Lista de Professores{% endblock %}
+
+{% block content %}
+
+<!-- Cabeçalho -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">Professores Cadastrados</h5>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-people-fill"></i> Total: <strong>{{ professores|length }}</strong> professor{{ professores|length|pluralize:"es" }}
+                </p>
+            </div>
+            {% if user.is_superuser or user.perfil.pode_criar_professor %}
+<a href="{% url 'os_app:novo_professor' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i> Novo Professor
+</a>
+{% else %}
+<button class="btn btn-secondary" disabled title="Sem permissão">
+    <i class="bi bi-plus-circle me-1"></i> Novo Professor
+</button>
+{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Filtros Rápidos -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body py-2">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Buscar...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" id="filterEscola">
+                    <option value="">Todas Escolas</option>
+                    <option value="com_escola">Com Escola</option>
+                    <option value="sem_escola">Sem Escola</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" id="filterArea">
+                    <option value="">Todas Áreas</option>
+                    {% for value, label in area_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-sm btn-outline-secondary w-100" onclick="limparFiltros()">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-sm btn-outline-primary w-100" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Professores -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0" id="professoresTable" style="font-size: 0.8rem;">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
+                        <th style="width: 50px;">ID</th>
+                        <th style="width: 180px;">Nome</th>
+                        <th style="width: 110px;">Cargo</th>
+                        <th style="width: 100px;">Situação</th>
+                        <th style="width: 160px;">Escola</th>
+                        <th style="width: 200px;">Endereço Escola</th>
+                        <th style="width: 70px;">Zona</th>
+                        <th style="width: 100px;">Modalidade</th>
+                        <th style="width: 120px;">Área Atuação</th>
+                        <th style="width: 100px;" class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for professor in professores %}
+                    <tr data-nome="{{ professor.nome|lower }}" 
+                        data-cpf="{{ professor.cpf }}" 
+                        data-area="{{ professor.area_atuacao }}"
+                        data-escola="{% if professor.escola or professor.escola_nucleo %}com_escola{% else %}sem_escola{% endif %}">
+                        
+                        <!-- Checkbox -->
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input row-checkbox">
+                        </td>
+                        
+                        <!-- ID -->
+                        <td class="text-center">
+                            <span class="badge bg-secondary">#{{ professor.id }}</span>
+                        </td>
+                        
+                        <!-- Nome -->
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle-sm bg-primary text-white me-2">
+                                    {{ professor.nome|slice:":1"|upper }}
+                                </div>
+                                <div style="min-width: 0;">
+                                    <div class="fw-bold text-truncate" title="{{ professor.nome }}">
+                                        {{ professor.nome|truncatechars:25 }}
+                                    </div>
+                                    <small class="text-muted text-truncate d-block" title="{{ professor.email }}">
+                                        {{ professor.email|truncatechars:25 }}
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <!-- Cargo -->
+                        <td>
+                            {% if professor.cargo %}
+                                <div class="text-truncate" title="{{ professor.cargo.nome }}">
+                                    {{ professor.cargo.nome|truncatechars:18 }}
+                                </div>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Situação Funcional -->
+                        <td>
+                            {% if professor.situacao_funcional %}
+                                <span class="badge bg-info text-dark" style="font-size: 0.7rem;">
+                                    {{ professor.get_situacao_funcional_display }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Escola de Lotação -->
+                        <td>
+                            {% if professor.escola %}
+                                <div>
+                                    <i class="bi bi-building text-success"></i>
+                                    <span class="text-truncate d-inline-block" style="max-width: 130px;" title="{{ professor.escola.nome }}">
+                                        <strong>{{ professor.escola.nome|truncatechars:20 }}</strong>
+                                    </span>
+                                </div>
+                                {% if professor.escola.nucleo %}
+                                    <small class="text-muted text-truncate d-block" title="{{ professor.escola.nucleo.nome }}">
+                                        {{ professor.escola.nucleo.nome|truncatechars:20 }}
+                                    </small>
+                                {% endif %}
+                            {% elif professor.escola_nucleo %}
+                                <div>
+                                    <i class="bi bi-buildings text-primary"></i>
+                                    <span class="text-truncate d-inline-block" style="max-width: 130px;" title="{{ professor.escola_nucleo.nome }}">
+                                        <strong>{{ professor.escola_nucleo.nome|truncatechars:20 }}</strong>
+                                    </span>
+                                </div>
+                                <span class="badge bg-primary" style="font-size: 0.65rem;">Núcleo</span>
+                            {% else %}
+                                <span class="text-muted">Sem escola</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Endereço da Escola -->
+                        <td>
+                            {% if professor.escola %}
+                                <div class="text-truncate" title="{{ professor.escola.endereco }}, {{ professor.escola.numero }}">
+                                    <small>
+                                        {{ professor.escola.endereco|default:"-"|truncatechars:25 }}
+                                        {% if professor.escola.numero %}
+                                            , {{ professor.escola.numero }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% if professor.escola.bairro %}
+                                    <small class="text-muted">{{ professor.escola.bairro.nome|truncatechars:20 }}</small>
+                                {% endif %}
+                            {% elif professor.escola_nucleo %}
+                                <div class="text-truncate" title="{{ professor.escola_nucleo.endereco }}, {{ professor.escola_nucleo.numero }}">
+                                    <small>
+                                        {{ professor.escola_nucleo.endereco|default:"-"|truncatechars:25 }}
+                                        {% if professor.escola_nucleo.numero %}
+                                            , {{ professor.escola_nucleo.numero }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% if professor.escola_nucleo.bairro %}
+                                    <small class="text-muted">{{ professor.escola_nucleo.bairro.nome|truncatechars:20 }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Zona -->
+                        <td>
+                            {% if professor.escola %}
+                                <span class="badge bg-success" style="font-size: 0.7rem;">
+                                    {{ professor.escola.get_zona_display }}
+                                </span>
+                            {% elif professor.escola_nucleo %}
+                                <span class="badge bg-primary" style="font-size: 0.7rem;">
+                                    {{ professor.escola_nucleo.get_zona_display }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Modalidade -->
+                        <td>
+                            {% if professor.modalidade %}
+                                <small>{{ professor.get_modalidade_display }}</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Área de Atuação -->
+                        <td>
+                            {% if professor.area_atuacao %}
+                                <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">
+                                    {{ professor.get_area_atuacao_display|truncatechars:15 }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Ações -->
+                        <td class="text-center">
+    <div class="btn-group btn-group-sm" role="group">
+        <!-- Visualizar -->
+        <a href="{% url 'os_app:detalhe_professor' professor.id %}" 
+           class="btn btn-outline-info" 
+           title="Ver detalhes">
+            <i class="bi bi-eye"></i>
+        </a>
+        
+       <!-- Editar -->
+        {% if user.is_superuser or user.perfil.pode_editar_professor %}
+        <a href="{% url 'os_app:editar_professor' professor.id %}" 
+           class="btn btn-outline-primary" 
+           title="Editar">
+            <i class="bi bi-pencil"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-outline-secondary" 
+                title="Sem permissão para editar" 
+                disabled>
+            <i class="bi bi-pencil"></i>
+        </button>
+        {% endif %}
+        
+        <!-- Excluir -->
+        {% if user.is_superuser or user.perfil.pode_excluir_professor %}
+        <a href="{% url 'os_app:deletar_professor' professor.id %}" 
+           class="btn btn-outline-danger" 
+           title="Excluir"
+           onclick="return confirm('Tem certeza que deseja excluir o professor {{ professor.nome }}?')">
+            <i class="bi bi-trash"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-outline-secondary" 
+                title="Sem permissão para excluir" 
+                disabled>
+            <i class="bi bi-trash"></i>
+        </button>
+        {% endif %}
+    </div>
+</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                            <p class="text-muted mt-3">Nenhum professor cadastrado.</p>
+                            <a href="{% url 'os_app:novo_professor' %}" class="btn btn-primary">
+                                <i class="bi bi-person-plus"></i> Cadastrar Primeiro Professor
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if professores %}
+    <div class="card-footer bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                <span id="selectedCount">0</span> selecionado(s)
+            </small>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportarExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> Excel
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.avatar-circle-sm {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.table-sm td, .table-sm th {
+    padding: 0.45rem 0.3rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.001);
+}
+
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media print {
+    .no-print, .btn, .card-footer, .form-control, .form-select {
+        display: none !important;
+    }
+    
+    .table {
+        font-size: 8pt !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+
+<script>
+// Busca em tempo real
+document.getElementById('searchInput').addEventListener('input', function() {
+    filtrarTabela();
+});
+
+document.getElementById('filterEscola').addEventListener('change', function() {
+    filtrarTabela();
+});
+
+document.getElementById('filterArea').addEventListener('change', function() {
+    filtrarTabela();
+});
+
+function filtrarTabela() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const filterEscola = document.getElementById('filterEscola').value;
+    const filterArea = document.getElementById('filterArea').value;
+    
+    const rows = document.querySelectorAll('#professoresTable tbody tr[data-nome]');
+    
+    rows.forEach(row => {
+        const nome = row.getAttribute('data-nome');
+        const cpf = row.getAttribute('data-cpf');
+        const escola = row.getAttribute('data-escola');
+        const area = row.getAttribute('data-area');
+        
+        const matchSearch = nome.includes(searchTerm) || cpf.includes(searchTerm);
+        const matchEscola = !filterEscola || escola === filterEscola;
+        const matchArea = !filterArea || area === filterArea;
+        
+        if (matchSearch && matchEscola && matchArea) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function limparFiltros() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterEscola').value = '';
+    document.getElementById('filterArea').value = '';
+    filtrarTabela();
+}
+
+// Selecionar todos
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    atualizarContador();
+});
+
+document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', atualizarContador);
+});
+
+function atualizarContador() {
+    const selected = document.querySelectorAll('.row-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = selected;
+}
+
+function confirmarExclusao(id, nome) {
+    if (confirm(`Tem certeza que deseja excluir o professor "${nome}"?`)) {
+        alert('Funcionalidade de exclusão a ser implementada!');
+    }
+}
+
+function exportarExcel() {
+    alert('Funcionalidade de exportação a ser implementada!');
+}
+
+// Inicializar
+atualizarContador();
+</script>
+
+{% endblock %}

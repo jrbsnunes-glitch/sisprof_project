@@ -1,0 +1,76 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}Relatórios OS{% endblock %}
+
+{% block content %}
+<h2>Relatórios de Ordens de Serviço</h2>
+
+<!-- Formulário de filtro -->
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-2">
+        {{ form.data_inicio.label_tag }}
+        {{ form.data_inicio }}
+    </div>
+    <div class="col-md-2">
+        {{ form.data_fim.label_tag }}
+        {{ form.data_fim }}
+    </div>
+    <div class="col-md-2">
+        {{ form.professor.label_tag }}
+        {{ form.professor }}
+    </div>
+    <div class="col-md-2">
+        {{ form.responsavel.label_tag }}
+        {{ form.responsavel }}
+    </div>
+    <div class="col-md-2">
+        {{ form.status.label_tag }}
+        {{ form.status }}
+    </div>
+    <div class="col-md-2 align-self-end">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="?pdf=1{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" class="btn btn-secondary">PDF</a>
+    </div>
+</form>
+
+<!-- Tabela de resultados -->
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Professor</th>
+            <th>Responsável OS</th>
+            <th>Descrição</th>
+            <th>Serviços Executados</th>
+            <th>Data Início</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for os in ordens %}
+        <tr>
+            <td>{{ os.id }}</td>
+            <td>{{ os.professor.nome }}</td>
+            <td>{{ os.responsavel.nome }}</td>
+            <td>{{ os.descricao|truncatechars:50 }}</td>
+            <td>
+                {% for serv in os.servicos.all %}
+                    {% if serv.responsavel %}
+                        <strong>{{ serv.responsavel.nome }}</strong>: {{ serv.descricao|truncatechars:40 }}<br>
+                    {% else %}
+                        <strong>Sem responsável</strong>: {{ serv.descricao|truncatechars:40 }}<br>
+                    {% endif %}
+                {% empty %}
+                    Nenhum serviço
+                {% endfor %}
+            </td>
+            <td>{{ os.data_hora_inicio|date:"d/m/Y H:i" }}</td>
+            <td>{{ os.get_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center">Nenhuma OS encontrada.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

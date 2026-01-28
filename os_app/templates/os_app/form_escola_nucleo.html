@@ -1,0 +1,183 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}{{ titulo }} - SISPROF{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-buildings text-primary"></i> {{ titulo }}
+                </h2>
+                <p class="text-muted">Preencha os dados da escola núcleo</p>
+            </div>
+
+            <!-- Formulário -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Dados Básicos -->
+                        <h5 class="mb-3 text-primary">
+                            <i class="bi bi-info-circle"></i> Dados Básicos
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="{{ form.nome.id_for_label }}" class="form-label fw-bold">
+                                    Nome da Escola Núcleo *
+                                </label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                    <div class="text-danger mt-1">{{ form.nome.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.codigo.id_for_label }}" class="form-label fw-bold">
+                                    Código
+                                </label>
+                                {{ form.codigo }}
+                                {% if form.codigo.errors %}
+                                    <div class="text-danger mt-1">{{ form.codigo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.codigo_inep.id_for_label }}" class="form-label fw-bold">
+                                    Código INEP
+                                </label>
+                                {{ form.codigo_inep }}
+                                {% if form.codigo_inep.errors %}
+                                    <div class="text-danger mt-1">{{ form.codigo_inep.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.zona.id_for_label }}" class="form-label fw-bold">
+                                    Zona
+                                </label>
+                                {{ form.zona }}
+                                {% if form.zona.errors %}
+                                    <div class="text-danger mt-1">{{ form.zona.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Endereço -->
+                        <h5 class="mb-3 text-primary">
+                            <i class="bi bi-geo-alt"></i> Endereço
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-9">
+                                <label for="{{ form.endereco.id_for_label }}" class="form-label fw-bold">
+                                    Endereço *
+                                </label>
+                                {{ form.endereco }}
+                                {% if form.endereco.errors %}
+                                    <div class="text-danger mt-1">{{ form.endereco.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.numero.id_for_label }}" class="form-label fw-bold">
+                                    Número
+                                </label>
+                                {{ form.numero }}
+                                {% if form.numero.errors %}
+                                    <div class="text-danger mt-1">{{ form.numero.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold">
+                                    CEP
+                                </label>
+                                {{ form.cep }}
+                                {% if form.cep.errors %}
+                                    <div class="text-danger mt-1">{{ form.cep.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <label for="{{ form.bairro.id_for_label }}" class="form-label fw-bold">
+                                    Bairro
+                                </label>
+                                {{ form.bairro }}
+                                {% if form.bairro.errors %}
+                                    <div class="text-danger mt-1">{{ form.bairro.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="{{ form.cidade.id_for_label }}" class="form-label fw-bold">
+                                    Cidade *
+                                </label>
+                                {{ form.cidade }}
+                                {% if form.cidade.errors %}
+                                    <div class="text-danger mt-1">{{ form.cidade.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">
+                                    Estado *
+                                </label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger mt-1">{{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Contato -->
+                        <h5 class="mb-3 text-primary">
+                            <i class="bi bi-telephone"></i> Contato
+                        </h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.telefone.id_for_label }}" class="form-label fw-bold">
+                                    Telefone
+                                </label>
+                                {{ form.telefone }}
+                                {% if form.telefone.errors %}
+                                    <div class="text-danger mt-1">{{ form.telefone.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">
+                                    E-mail
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger mt-1">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'os_app:lista_escolas_nucleo' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> {% if editando %}Atualizar{% else %}Cadastrar{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

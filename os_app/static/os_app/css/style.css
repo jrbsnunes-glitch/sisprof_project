@@ -1,0 +1,11 @@
+.status-aberta {
+    background-color: #f8d7da; /* vermelho claro */
+}
+
+.status-em_andamento {
+    background-color: #fff3cd; /* amarelo claro */
+}
+
+.status-finalizada {
+    background-color: #d4edda; /* verde claro */
+}

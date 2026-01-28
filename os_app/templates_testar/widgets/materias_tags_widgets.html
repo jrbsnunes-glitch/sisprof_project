@@ -1,0 +1,291 @@
+<!-- ============================================================================ -->
+<!-- TEMPLATE DO WIDGET CUSTOMIZADO DE MATÉRIAS -->
+<!-- Arquivo: templates/widgets/materias_tags_widget.html -->
+<!-- ============================================================================ -->
+
+<div class="materias-tags-container" data-widget-name="{{ widget.name }}">
+    <!-- Container para badges selecionados -->
+    <div class="materias-badges-display mb-3" id="badges-{{ widget.name }}">
+        <span class="text-muted fst-italic empty-message">
+            <i class="bi bi-info-circle"></i> Clique nas matérias abaixo para selecionar
+        </span>
+    </div>
+    
+    <!-- Grid de matérias selecionáveis -->
+    <div class="materias-selection-grid">
+        {% for value, label in widget.choices %}
+        <div class="materia-tag-option" 
+             data-value="{{ value }}"
+             data-label="{{ label }}"
+             data-color="{{ widget.materias_cores|get_item:value|default:'secondary' }}">
+            <input type="checkbox" 
+                   name="{{ widget.name }}" 
+                   value="{{ value }}"
+                   id="id_{{ widget.name }}_{{ forloop.counter0 }}"
+                   class="materia-checkbox"
+                   {% if value in widget.value %}checked{% endif %}>
+            <label for="id_{{ widget.name }}_{{ forloop.counter0 }}" 
+                   class="materia-label">
+                <span class="materia-icon">📚</span>
+                <span class="materia-text">{{ label }}</span>
+            </label>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Botão para limpar seleção -->
+    <div class="mt-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary limpar-materias">
+            <i class="bi bi-x-circle"></i> Limpar Seleção
+        </button>
+    </div>
+</div>
+
+<!-- Script inline para funcionamento do widget -->
+<script>
+(function() {
+    const container = document.querySelector('[data-widget-name="{{ widget.name }}"]');
+    if (!container) return;
+    
+    const badgesDisplay = container.querySelector('.materias-badges-display');
+    const emptyMessage = badgesDisplay.querySelector('.empty-message');
+    const checkboxes = container.querySelectorAll('.materia-checkbox');
+    const options = container.querySelectorAll('.materia-tag-option');
+    const limparBtn = container.querySelector('.limpar-materias');
+    
+    // Cores das matérias
+    const cores = {
+        'portugues': 'primary',
+        'matematica': 'success',
+        'historia': 'warning',
+        'geografia': 'info',
+        'ciencias': 'danger',
+        'educacao_fisica': 'secondary',
+        'artes': 'purple',
+        'ensino_religioso': 'dark',
+        'ingles': 'teal'
+    };
+    
+    // Ícones das matérias
+    const icones = {
+        'portugues': '📖',
+        'matematica': '🧮',
+        'historia': '⏳',
+        'geografia': '🌍',
+        'ciencias': '⚛️',
+        'educacao_fisica': '🏃',
+        'artes': '🎨',
+        'ensino_religioso': '☮️',
+        'ingles': '🌐'
+    };
+    
+    function atualizarBadges() {
+        // Limpa badges
+        badgesDisplay.innerHTML = '';
+        
+        let algumSelecionado = false;
+        
+        checkboxes.forEach(checkbox => {
+            const option = checkbox.closest('.materia-tag-option');
+            
+            if (checkbox.checked) {
+                algumSelecionado = true;
+                const valor = checkbox.value;
+                const label = option.dataset.label;
+                const cor = cores[valor] || 'secondary';
+                const icone = icones[valor] || '📚';
+                
+                // Marca opção como selecionada
+                option.classList.add('selected');
+                
+                // Cria badge
+                const badge = document.createElement('span');
+                badge.className = `badge bg-${cor} me-2 mb-2 fs-6 py-2 px-3 materia-badge`;
+                badge.dataset.valor = valor;
+                badge.innerHTML = `
+                    <span class="me-1">${icone}</span>
+                    ${label}
+                    <button type="button" 
+                            class="btn-close btn-close-white ms-2 btn-sm" 
+                            style="font-size: 0.6rem; vertical-align: middle;"
+                            data-remover="${valor}"></button>
+                `;
+                
+                badgesDisplay.appendChild(badge);
+            } else {
+                option.classList.remove('selected');
+            }
+        });
+        
+        // Se não tem nenhum selecionado, mostra mensagem
+        if (!algumSelecionado) {
+            badgesDisplay.innerHTML = '<span class="text-muted fst-italic empty-message"><i class="bi bi-info-circle"></i> Clique nas matérias abaixo para selecionar</span>';
+        }
+    }
+    
+    // Evento de mudança nos checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', atualizarBadges);
+    });
+    
+    // Evento de clique nas opções (labels)
+    options.forEach(option => {
+        const label = option.querySelector('.materia-label');
+        label.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON') return;
+            const checkbox = option.querySelector('.materia-checkbox');
+            checkbox.checked = !checkbox.checked;
+            atualizarBadges();
+        });
+    });
+    
+    // Evento para remover matéria pelo badge
+    badgesDisplay.addEventListener('click', function(e) {
+        if (e.target.hasAttribute('data-remover')) {
+            const valor = e.target.dataset.remover;
+            const checkbox = container.querySelector(`input[value="${valor}"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+                atualizarBadges();
+            }
+        }
+    });
+    
+    // Botão limpar seleção
+    if (limparBtn) {
+        limparBtn.addEventListener('click', function() {
+            checkboxes.forEach(cb => cb.checked = false);
+            atualizarBadges();
+        });
+    }
+    
+    // Inicializa badges com valores já selecionados
+    atualizarBadges();
+})();
+</script>
+
+<style>
+/* Cores customizadas para badges */
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+.bg-teal {
+    background-color: #20c997 !important;
+}
+
+/* Container de badges */
+.materias-badges-display {
+    min-height: 60px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.materias-badges-display .empty-message {
+    width: 100%;
+    text-align: center;
+}
+
+/* Badge de matéria */
+.materia-badge {
+    cursor: default;
+    transition: all 0.2s;
+}
+
+.materia-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.materia-badge .btn-close {
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.materia-badge .btn-close:hover {
+    opacity: 1;
+}
+
+/* Grid de seleção */
+.materias-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+/* Opção de matéria */
+.materia-tag-option {
+    position: relative;
+}
+
+.materia-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.materia-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background-color: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    font-weight: 500;
+}
+
+.materia-label:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.materia-tag-option.selected .materia-label {
+    background-color: #e7f3ff;
+    border-color: #0d6efd;
+    border-width: 2px;
+}
+
+.materia-icon {
+    font-size: 1.3rem;
+}
+
+.materia-text {
+    font-size: 0.95rem;
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.materia-badge {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .materias-selection-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

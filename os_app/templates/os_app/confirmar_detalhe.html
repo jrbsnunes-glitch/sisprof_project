@@ -1,0 +1,63 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}Confirmar Exclusão - SISPROF{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-octagon"></i> Atenção!
+                        </h5>
+                        <p>Você está prestes a <strong>excluir permanentemente</strong> o professor:</p>
+                        <hr>
+                        <div class="mb-3">
+                            <p class="mb-2">
+                                <strong><i class="bi bi-person"></i> Nome:</strong> {{ professor.nome }}
+                            </p>
+                            <p class="mb-2">
+                                <strong><i class="bi bi-credit-card"></i> CPF:</strong> {{ professor.cpf_formatado }}
+                            </p>
+                            {% if professor.matricula %}
+                            <p class="mb-2">
+                                <strong><i class="bi bi-card-heading"></i> Matrícula:</strong> {{ professor.matricula }}
+                            </p>
+                            {% endif %}
+                            {% if professor.escola %}
+                            <p class="mb-2">
+                                <strong><i class="bi bi-building"></i> Escola:</strong> {{ professor.escola.nome }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-info-circle"></i> Esta ação <strong>não pode ser desfeita</strong>. 
+                            Todos os dados do professor serão removidos permanentemente do sistema.
+                        </p>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'os_app:detalhe_professor' professor.id %}" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="bi bi-trash"></i> Sim, Excluir Professor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

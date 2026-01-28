@@ -1,0 +1,63 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}TESTE - Campos do Formulário{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>🔍 TESTE DE DEBUG - Formulário Professor</h1>
+    
+    <div class="alert alert-info">
+        <h4>Informações de Debug:</h4>
+        <p><strong>Form recebido:</strong> Sim</p>
+    </div>
+
+    <hr>
+
+    <h3>Renderização dos Campos:</h3>
+    
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            Campo NUCLEO
+        </div>
+        <div class="card-body">
+            <label>Nucleo:</label>
+            {{ form.nucleo }}
+            <hr>
+            <pre>HTML: {{ form.nucleo }}</pre>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-success text-white">
+            Campo ESCOLA
+        </div>
+        <div class="card-body">
+            <label>Escola:</label>
+            {{ form.escola }}
+            <hr>
+            <pre>HTML: {{ form.escola }}</pre>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-warning text-dark">
+            Campo BAIRRO
+        </div>
+        <div class="card-body">
+            <label>Bairro (hidden):</label>
+            {{ form.bairro }}
+            <hr>
+            <pre>HTML: {{ form.bairro }}</pre>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>Todos os campos do form:</h3>
+    <ul>
+        {% for field in form %}
+        <li><strong>{{ field.name }}</strong>: {{ field.label }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

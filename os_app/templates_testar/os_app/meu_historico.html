@@ -1,0 +1,210 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}Meu Histórico{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-person-lines-fill"></i> Meu Histórico de Ações</h2>
+            <p class="text-muted">Histórico das suas atividades no sistema</p>
+        </div>
+        <div>
+            <a href="{% url 'os_app:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Estatísticas do Usuário -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">
+                        <i class="bi bi-list-ul"></i> Total de Ações
+                    </h5>
+                    <h2 class="mb-0">{{ total_acoes|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">
+                        <i class="bi bi-clock"></i> Última Ação
+                    </h5>
+                    <p class="mb-0">
+                        {% if ultima_acao %}
+                            {{ ultima_acao.data_hora|date:"d/m/Y H:i" }}
+                            <br><small class="text-muted">{{ ultima_acao.get_acao_display }}</small>
+                        {% else %}
+                            <span class="text-muted">Nenhuma ação registrada</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-info">
+                        <i class="bi bi-graph-up"></i> Ações por Tipo
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for acao in acoes_por_tipo|slice:":5" %}
+                        <span class="badge bg-info">
+                            {{ acao.acao }}: {{ acao.total }}
+                        </span>
+                        {% empty %}
+                        <span class="text-muted">Nenhuma ação ainda</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Histórico -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> Últimas 100 Ações
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="15%">Data/Hora</th>
+                            <th width="12%">Ação</th>
+                            <th width="12%">Modelo</th>
+                            <th width="45%">Descrição</th>
+                            <th width="10%">IP</th>
+                            <th width="6%">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <strong>{{ log.data_hora|date:"d/m/Y" }}</strong><br>
+                                <small class="text-muted">{{ log.data_hora|date:"H:i:s" }}</small>
+                            </td>
+                            <td>
+                                {% if log.acao == 'LOGIN' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-box-arrow-in-right"></i> 
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'LOGOUT' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-box-arrow-left"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'CREATE' %}
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-plus-circle"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'UPDATE' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-pencil"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'DELETE' %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-trash"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'VIEW' %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-eye"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'REPORT' %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-file-earmark-bar-graph"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% elif log.acao == 'SEARCH' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-search"></i>
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        {{ log.get_acao_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.modelo %}
+                                    <strong>{{ log.get_modelo_display }}</strong>
+                                    {% if log.objeto_id %}
+                                        <br><small class="text-muted">ID: {{ log.objeto_id }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ log.descricao|default:"-" }}
+                                {% if log.objeto_repr %}
+                                    <br><small class="text-muted">{{ log.objeto_repr|truncatechars:60 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ log.ip_address|default:"-" }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if log.sucesso %}
+                                    <i class="bi bi-check-circle-fill text-success" title="Sucesso"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger" title="Erro"></i>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                <i class="bi bi-info-circle fs-1"></i>
+                <h4 class="mt-3">Nenhuma ação registrada ainda</h4>
+                <p class="mb-0">Suas ações no sistema aparecerão aqui automaticamente.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Informações -->
+    <div class="alert alert-light mt-4" role="alert">
+        <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Sobre este histórico</h5>
+        <p class="mb-0">
+            Este é o histórico das suas ações no sistema SISPROF. São registradas automaticamente 
+            ações como login, criação e edição de registros, visualizações e geração de relatórios.
+            Os últimos 100 registros são exibidos aqui.
+        </p>
+    </div>
+</div>
+
+<style>
+    .badge {
+        font-size: 0.85em;
+        padding: 0.4em 0.6em;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

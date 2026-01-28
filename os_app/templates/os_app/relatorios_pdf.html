@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de OS</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 30mm 25mm 30mm 25mm; /* topo, direita, baixo, esquerda */
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            margin: 0; /* as margens do A4 são controladas pelo @page */
+        }
+
+        h2 {
+            background-color: #0d6efd;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .service {
+            margin-bottom: 5px;
+        }
+
+        .service strong {
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Relatório de Ordens de Serviço</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Responsável OS</th>
+                <th>Descrição</th>
+                <th>Serviços Executados</th>
+                <th>Data Início</th>
+                <th>Data Finalização</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for os in ordens %}
+            <tr>
+                <td class="nowrap">{{ os.id }}</td>
+                <td>{{ os.cliente.nome }}</td>
+                <td>{{ os.responsavel.nome }}</td>
+                <td>{{ os.descricao|truncatechars:50 }}</td>
+                <td>
+                    {% for serv in os.servicos.all %}
+                        <div class="service">
+                            {% if serv.responsavel %}
+                                <strong>{{ serv.responsavel.nome }}</strong>: {{ serv.descricao|truncatechars:40 }}
+                            {% else %}
+                                <strong>Sem responsável</strong>: {{ serv.descricao|truncatechars:40 }}
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        Nenhum serviço
+                    {% endfor %}
+                </td>
+                <td class="nowrap">{{ os.data_hora_inicio|date:"d/m/Y H:i" }}</td>
+                <td class="nowrap">
+                    {% if os.data_hora_fim %}
+                        {{ os.data_hora_fim|date:"d/m/Y H:i" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="nowrap">{{ os.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align:center;">Nenhuma OS encontrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
+
+
+
+
+
+
+
+

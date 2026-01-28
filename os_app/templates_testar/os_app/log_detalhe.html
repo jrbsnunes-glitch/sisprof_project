@@ -1,0 +1,231 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}Detalhes do Log #{{ log.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-eye"></i> Detalhes do Log #{{ log.id }}</h2>
+            <p class="text-muted">Informações completas sobre esta ação</p>
+        </div>
+        <div>
+            <a href="{% url 'os_app:logs_auditoria' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar para Logs
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações Principais -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações da Ação</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>ID:</strong></div>
+                        <div class="col-md-9">{{ log.id }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Data/Hora:</strong></div>
+                        <div class="col-md-9">
+                            {{ log.data_hora|date:"d/m/Y H:i:s" }}
+                            <small class="text-muted">({{ log.data_hora|timesince }} atrás)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Usuário:</strong></div>
+                        <div class="col-md-9">
+                            {% if log.usuario %}
+                                <i class="bi bi-person-fill"></i> {{ log.usuario.username }}
+                                ({{ log.usuario.get_full_name|default:"Sem nome" }})
+                            {% else %}
+                                <i class="bi bi-robot"></i> Sistema
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Ação:</strong></div>
+                        <div class="col-md-9">
+                            {% if log.acao == 'LOGIN' %}
+                                <span class="badge bg-success fs-6">{{ log.get_acao_display }}</span>
+                            {% elif log.acao == 'LOGOUT' %}
+                                <span class="badge bg-secondary fs-6">{{ log.get_acao_display }}</span>
+                            {% elif log.acao == 'CREATE' %}
+                                <span class="badge bg-primary fs-6">{{ log.get_acao_display }}</span>
+                            {% elif log.acao == 'UPDATE' %}
+                                <span class="badge bg-warning text-dark fs-6">{{ log.get_acao_display }}</span>
+                            {% elif log.acao == 'DELETE' %}
+                                <span class="badge bg-danger fs-6">{{ log.get_acao_display }}</span>
+                            {% else %}
+                                <span class="badge bg-info fs-6">{{ log.get_acao_display }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Modelo:</strong></div>
+                        <div class="col-md-9">
+                            {% if log.modelo %}
+                                {{ log.get_modelo_display }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Objeto ID:</strong></div>
+                        <div class="col-md-9">
+                            {% if log.objeto_id %}
+                                {{ log.objeto_id }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Objeto:</strong></div>
+                        <div class="col-md-9">
+                            {% if log.objeto_repr %}
+                                <code>{{ log.objeto_repr }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Descrição:</strong></div>
+                        <div class="col-md-9">{{ log.descricao|default:"-" }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Status:</strong></div>
+                        <div class="col-md-9">
+                            {% if log.sucesso %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Sucesso
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Erro
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if log.mensagem_erro %}
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Erro:</strong></div>
+                        <div class="col-md-9">
+                            <div class="alert alert-danger mb-0">
+                                {{ log.mensagem_erro }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Dados Anteriores e Novos -->
+            {% if log.dados_anteriores or log.dados_novos %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Alterações</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if log.dados_anteriores %}
+                        <div class="col-md-6">
+                            <h6 class="text-danger">
+                                <i class="bi bi-dash-circle"></i> Dados Anteriores
+                            </h6>
+                            <pre class="bg-light p-3 rounded"><code>{{ log.dados_anteriores|pprint }}</code></pre>
+                        </div>
+                        {% endif %}
+                        
+                        {% if log.dados_novos %}
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="bi bi-plus-circle"></i> Dados Novos
+                            </h6>
+                            <pre class="bg-light p-3 rounded"><code>{{ log.dados_novos|pprint }}</code></pre>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Informações Técnicas -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pc-display"></i> Informações Técnicas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="bi bi-router"></i> Endereço IP:</strong><br>
+                        <code>{{ log.ip_address|default:"-" }}</code>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong><i class="bi bi-browser-chrome"></i> Navegador:</strong><br>
+                        <small class="text-muted">
+                            {{ log.user_agent|truncatechars:100|default:"-" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Relacionadas -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-link"></i> Ações</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'os_app:logs_auditoria' %}?usuario={{ log.usuario.id }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-person"></i> Ver todos logs deste usuário
+                        </a>
+                        
+                        <a href="{% url 'os_app:logs_auditoria' %}?acao={{ log.acao }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-filter"></i> Ver todos logs desta ação
+                        </a>
+                        
+                        {% if log.modelo %}
+                        <a href="{% url 'os_app:logs_auditoria' %}?modelo={{ log.modelo }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-diagram-3"></i> Ver todos logs deste modelo
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    pre {
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 0.85em;
+    }
+    
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
