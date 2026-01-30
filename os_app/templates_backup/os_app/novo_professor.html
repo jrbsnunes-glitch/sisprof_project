@@ -514,30 +514,28 @@
                                     <i class="bi bi-buildings"></i> Escola Núcleo
                                 </label>
                                 <div class="input-group">
-                                    {{ form.nucleo }}
+                                    {{ form.escola_nucleo }}
                                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalEscolaNucleo" title="Adicionar nova escola núcleo">
                                         <i class="bi bi-plus-circle"></i>
                                     </button>
                                 </div>
-                                {{ form.escola_nucleo }}
                                 <small class="text-muted" id="nucleo-info"></small>
-                                {% if form.nucleo.errors %}
-                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.nucleo.errors }}</div>
-                                {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ form.escola_lotacao.id_for_label }}" class="form-label fw-bold">
+                                <label for="{{ form.escola.id_for_label }}" class="form-label fw-bold">
                                     <i class="bi bi-building"></i> Escola Dependente
                                 </label>
                                 <div class="input-group">
                                     {{ form.escola_lotacao }}
+                                    <!-- Campo hidden para escola_nucleo -->
+                                    <input type="hidden" id="id_escola_nucleo" name="escola_nucleo">
                                     <button type="button" class="btn btn-outline-success" id="btnNovaEscola" data-bs-toggle="modal" data-bs-target="#modalEscolaDependente" disabled title="Selecione uma escola núcleo primeiro">
                                         <i class="bi bi-plus-circle"></i>
                                     </button>
                                 </div>
                                 <small class="text-muted" id="escola-info"></small>
-                                {% if form.escola_lotacao.errors %}
-                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.escola_lotacao.errors }}</div>
+                                {% if form.escola.errors %}
+                                    <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.escola.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -588,21 +586,19 @@
 
                         <div class="row mb-3">
                             <div class="col-md-3">
-                                <div class="form-check mt-4">
-                                    {{ form.em_sala }}
-                                    <label for="{{ form.em_sala.id_for_label }}" class="form-check-label fw-bold">
-                                        <i class="bi bi-door-open"></i> Em Sala
-                                    </label>
-                                </div>
+                                <label for="{{ form.em_sala.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-door-open"></i> Em Sala
+                                </label>
+                                {{ form.em_sala }}
                             </div>
                             
                             <div class="col-md-4">
-                                <label for="{{ form.motivo_fora_sala.id_for_label }}" class="form-label fw-bold">
+                                <label for="{{ form.motivo.id_for_label }}" class="form-label fw-bold">
                                     <i class="bi bi-chat-left-text"></i> Motivo
                                 </label>
                                 <div class="input-group">
-                                    {{ form.motivo_fora_sala }}
-                                    <button type="button" class="btn btn-outline-success" id="btnAdicionarMotivo" data-bs-toggle="modal" data-bs-target="#modalNovoMotivo" title="Adicionar novo motivo">
+                                    {{ form.motivo }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalNovoMotivo" title="Adicionar novo motivo">
                                         <i class="bi bi-plus-circle"></i>
                                     </button>
                                 </div>
@@ -610,12 +606,12 @@
                             </div>
                             
                             <div class="col-md-5">
-                                <label for="substituto_search" class="form-label fw-bold">
+                                <label for="substituto" class="form-label fw-bold">
                                     <i class="bi bi-person-plus"></i> Substituto
                                 </label>
                                 <div class="input-group">
                                     <input type="text" id="substituto_search" class="form-control" placeholder="Digite o nome do professor..." autocomplete="off">
-                                    <input type="hidden" name="substituto" id="id_substituto" value="">
+                                    {{ form.substituto }}
                                     <button type="button" class="btn btn-outline-secondary" id="btnLimparSubstituto" title="Limpar seleção">
                                         <i class="bi bi-x"></i>
                                     </button>
@@ -627,10 +623,10 @@
 
                         <div class="row mb-3">
                             <div class="col-12">
-                                <label for="{{ form.observacoes.id_for_label }}" class="form-label fw-bold">
+                                <label for="{{ form.observacao_turmas.id_for_label }}" class="form-label fw-bold">
                                     <i class="bi bi-textarea-t"></i> Observação
                                 </label>
-                                {{ form.observacoes }}
+                                {{ form.observacao_turmas }}
                             </div>
                         </div>
 
@@ -1083,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('{% url "os_app:listar_motivos_ajax" %}')
             .then(r => r.json())
             .then(motivos => {
-                const motivoSelect = document.getElementById('id_motivo_fora_sala');
+                const motivoSelect = document.getElementById('motivo');
                 if (motivoSelect) {
                     // Limpar opções existentes (exceto a primeira "Selecione")
                     motivoSelect.innerHTML = '<option value="">Selecione</option>';
@@ -1138,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const btnSubmit = this.querySelector('button[type="submit"]');
             
             // === TRATAMENTO ESCOLA NÚCLEO vs DEPENDENTE ===
-            const escolaSelect = document.getElementById('id_escola_lotacao');
+            const escolaSelect = document.getElementById('id_escola');
             const escolaNucleoHidden = document.getElementById('id_escola_nucleo');
             const nucleoSelect = document.getElementById('id_nucleo');
             
@@ -1150,18 +1146,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     // É núcleo - preencher escola_nucleo com o ID do núcleo selecionado
                     const nucleoId = nucleoSelect ? nucleoSelect.value : '';
                     escolaNucleoHidden.value = nucleoId;
+                    // Limpar campo escola
                     escolaSelect.value = '';
                     console.log('  escola_nucleo_id:', nucleoId);
                 } else if (escolaSelect.value) {
                     console.log('📚 Salvando na ESCOLA DEPENDENTE');
-                    // É escola dependente - backend preenche escola_nucleo a partir de escola_lotacao.nucleo
+                    // É escola dependente - limpar campo escola_nucleo
                     escolaNucleoHidden.value = '';
                     console.log('  escola_id:', escolaSelect.value);
-                } else if (nucleoSelect && nucleoSelect.value) {
-                    // Só núcleo selecionado (sem escola dependente) - hidden já foi preenchido no change do núcleo
-                    console.log('🏫 Salvando só NÚCLEO');
                 } else {
                     console.log('⚠️  Nenhuma escola selecionada');
+                    // Nenhuma escola selecionada - limpar ambos
                     escolaNucleoHidden.value = '';
                 }
             }
@@ -1317,11 +1312,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Carregamento de escolas dependentes baseado na escola núcleo selecionada
     const nucleoSelect = document.getElementById('id_nucleo');
-    const escolaSelect = document.getElementById('id_escola_lotacao');
+    const escolaSelect = document.getElementById('id_escola');
     const btnNovaEscola = document.getElementById('btnNovaEscola');
     const escolaInfo = document.getElementById('escola-info');
-    const nucleoInfo = document.getElementById('nucleo-info');
-    const escolaNucleoHidden = document.getElementById('id_escola_nucleo');
     
     if (nucleoSelect && escolaSelect) {
         nucleoSelect.addEventListener('change', function() {
@@ -1329,8 +1322,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (nucleoId) {
                 btnNovaEscola.disabled = false;
                 escolaInfo.innerHTML = '<i class="bi bi-hourglass-split"></i> Carregando...';
-                // Sincronizar hidden escola_nucleo quando só o núcleo for selecionado (sem escola dependente)
-                if (escolaNucleoHidden) escolaNucleoHidden.value = nucleoId;
                 
                 fetch(`{% url 'os_app:carregar_escolas_por_nucleo' %}?nucleo_id=${nucleoId}`)
                     .then(r => r.json())
@@ -1348,7 +1339,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             ? `<i class="bi bi-check-circle text-success"></i> ${totalEscolas} escola(s) dependente(s) + Núcleo` 
                             : '<i class="bi bi-info-circle text-info"></i> Somente Escola Núcleo disponível';
                         escolaInfo.className = 'small';
-                        if (nucleoInfo) nucleoInfo.innerHTML = '<i class="bi bi-check-circle text-success"></i> Núcleo selecionado';
                     })
                     .catch(error => {
                         console.error('Erro:', error);
@@ -1360,8 +1350,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnNovaEscola.disabled = true;
                 escolaInfo.innerHTML = '<i class="bi bi-info-circle"></i> Selecione uma escola núcleo primeiro';
                 escolaInfo.className = 'text-muted small';
-                if (escolaNucleoHidden) escolaNucleoHidden.value = '';
-                if (nucleoInfo) nucleoInfo.innerHTML = '';
             }
         });
         
@@ -2133,7 +2121,7 @@ if (cepInputElement) {
                 
                 // Selecionar o motivo recém-criado
                 setTimeout(() => {
-                    const motivoSelect = document.getElementById('id_motivo_fora_sala');
+                    const motivoSelect = document.getElementById('motivo');
                     if (motivoSelect) {
                         motivoSelect.value = d.id;
                     }
@@ -2180,31 +2168,24 @@ if (cepInputElement) {
         });
     });
     
-    // Habilitar campo Motivo apenas quando "Em Sala" estiver DESMARCADO (não está em sala)
-    const emSalaCheckbox = document.getElementById('id_em_sala');
-    const motivoSelect = document.getElementById('id_motivo_fora_sala');
+    // Habilitar/desabilitar campo Motivo baseado em "Em Sala"
+    const emSalaSelect = document.getElementById('em_sala');
+    const motivoSelect = document.getElementById('motivo');
     
-    function atualizarEstadoMotivo() {
-        if (!emSalaCheckbox || !motivoSelect) return;
-        const emSalaMarcado = emSalaCheckbox.checked;
-        const motivoLabel = motivoSelect.closest('.col-md-4')?.querySelector('label');
-        const btnAdicionarMotivo = document.getElementById('btnAdicionarMotivo');
-        if (emSalaMarcado) {
-            motivoSelect.disabled = true;
-            motivoSelect.value = '';
-            if (motivoLabel) motivoLabel.classList.remove('required-field');
-            if (btnAdicionarMotivo) btnAdicionarMotivo.disabled = true;
-        } else {
-            motivoSelect.disabled = false;
-            if (motivoLabel) motivoLabel.classList.add('required-field');
-            if (btnAdicionarMotivo) btnAdicionarMotivo.disabled = false;
-        }
-    }
-    
-    if (emSalaCheckbox && motivoSelect) {
-        emSalaCheckbox.addEventListener('change', atualizarEstadoMotivo);
-        // Estado inicial ao carregar a página (checkbox "Em Sala" vem marcado por padrão)
-        atualizarEstadoMotivo();
+    if (emSalaSelect && motivoSelect) {
+        emSalaSelect.addEventListener('change', function() {
+            if (this.value === 'nao') {
+                motivoSelect.disabled = false;
+                motivoSelect.parentElement.parentElement.querySelector('label').classList.add('required-field');
+            } else {
+                motivoSelect.disabled = true;
+                motivoSelect.value = '';
+                motivoSelect.parentElement.parentElement.querySelector('label').classList.remove('required-field');
+            }
+        });
+        
+        // Estado inicial
+        motivoSelect.disabled = true;
     }
 });
 </script>
@@ -2226,7 +2207,7 @@ if (cepInputElement) {
         {% endif %}
         
         // 2. GARANTIR VISIBILIDADE
-        ['id_situacao_funcional', 'id_serie', 'id_modalidade', 'id_turno', 'id_em_sala', 'id_substituto', 'id_observacoes'].forEach(function(id) {
+        ['id_situacao_funcional', 'id_serie', 'id_modalidade', 'id_turno', 'id_em_sala', 'id_substituto', 'id_observacao_turmas'].forEach(function(id) {
             const campo = document.getElementById(id);
             if (campo) {
                 campo.style.display = 'block';

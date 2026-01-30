@@ -266,6 +266,9 @@ class Professor(models.Model):
     )
     
     # Endereço Residencial
+    cep = models.CharField('CEP', max_length=9, blank=True)
+    endereco = models.CharField('Endereço', max_length=200, blank=True)
+    numero = models.CharField('Número', max_length=20, blank=True)
     bairro = models.ForeignKey(
         Bairro,
         on_delete=models.SET_NULL,
@@ -274,7 +277,8 @@ class Professor(models.Model):
         verbose_name='Bairro',
         related_name='professores'
     )
-    numero = models.CharField('Número', max_length=20, blank=True)
+    cidade = models.CharField('Cidade', max_length=100, blank=True)
+    estado = models.CharField('UF', max_length=2, blank=True)
     complemento = models.CharField('Complemento', max_length=100, blank=True)
     
     # Dados Profissionais Adicionais

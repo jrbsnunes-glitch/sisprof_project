@@ -248,7 +248,7 @@
             <i class="bi bi-eye"></i>
         </a>
         
-       <!-- Editar -->
+        <!-- Editar -->
         {% if user.is_superuser or user.perfil.pode_editar_professor %}
         <a href="{% url 'os_app:editar_professor' professor.id %}" 
            class="btn btn-outline-primary" 

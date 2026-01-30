@@ -1120,6 +1120,7 @@ def relatorios_resultado(request):
         'data_cadastro': 'Dt. Cadastro',
     }
     
+    from django.conf import settings
     context = {
         'professores': professores,
         'filtros_aplicados': filtros_aplicados,
@@ -1128,6 +1129,7 @@ def relatorios_resultado(request):
         'sem_escola': sem_escola,
         'campos_selecionados': campos_selecionados,
         'campos_labels': campos_labels,
+        'media_url': getattr(settings, 'MEDIA_URL', '/media/'),
     }
     
     return render(request, 'os_app/relatorios_resultado.html', context)
@@ -1315,10 +1317,10 @@ def relatorios_pdf(request):
         orientacao='paisagem'
     )
     
-    # Prepara resposta
+    # Prepara resposta: inline = exibir PDF na tela (preview); attachment = download
     response = HttpResponse(content_type='application/pdf')
     filename = f'relatorio_professores_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
     response.write(buffer.getvalue())
     
     return response

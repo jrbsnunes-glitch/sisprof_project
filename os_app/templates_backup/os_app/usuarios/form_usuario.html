@@ -1,0 +1,184 @@
+{% extends 'os_app/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>{{ titulo }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Erro!</strong> Corrija os erros abaixo:
+                        <ul class="mb-0 mt-2">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Dados de Login -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-key me-2"></i>Dados de Login
+                        </h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Username *</label>
+                                {{ form.username }}
+                                <small class="text-muted">Nome usado para fazer login</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email *</label>
+                                {{ form.email }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Senha *</label>
+                                {{ form.password1 }}
+                                <small class="text-muted">Mínimo 8 caracteres</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Confirmar Senha *</label>
+                                {{ form.password2 }}
+                            </div>
+                        </div>
+
+                        <!-- Dados Pessoais -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-person me-2"></i>Dados Pessoais
+                        </h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nome *</label>
+                                {{ form.first_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Sobrenome *</label>
+                                {{ form.last_name }}
+                            </div>
+                        </div>
+
+                        <!-- Informações Profissionais -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-briefcase me-2"></i>Informações Profissionais
+                        </h6>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo de Usuário *</label>
+                                {{ form.tipo_usuario }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cargo/Função</label>
+                                {{ form.cargo_funcao }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Departamento</label>
+                                {{ form.departamento }}
+                            </div>
+                        </div>
+
+                        <!-- Contato -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-telephone me-2"></i>Contato
+                        </h6>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Telefone</label>
+                                {{ form.telefone }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Celular</label>
+                                {{ form.celular }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Foto</label>
+                                {{ form.foto }}
+                            </div>
+                        </div>
+
+                        <!-- Permissões -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-shield-check me-2"></i>Permissões
+                        </h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    {{ form.pode_criar_professor }}
+                                    <label class="form-check-label" for="{{ form.pode_criar_professor.id_for_label }}">
+                                        Pode Criar Professores
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    {{ form.pode_editar_professor }}
+                                    <label class="form-check-label" for="{{ form.pode_editar_professor.id_for_label }}">
+                                        Pode Editar Professores
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    {{ form.pode_excluir_professor }}
+                                    <label class="form-check-label" for="{{ form.pode_excluir_professor.id_for_label }}">
+                                        Pode Excluir Professores
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    {{ form.pode_gerar_relatorios }}
+                                    <label class="form-check-label" for="{{ form.pode_gerar_relatorios.id_for_label }}">
+                                        Pode Gerar Relatórios
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    {{ form.pode_exportar_dados }}
+                                    <label class="form-check-label" for="{{ form.pode_exportar_dados.id_for_label }}">
+                                        Pode Exportar Dados
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    {{ form.is_staff }}
+                                    <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                                        Acesso ao Admin
+                                    </label>
+                                    <small class="text-muted d-block">Permite acesso à interface administrativa</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observações -->
+                        <div class="mb-3">
+                            <label class="form-label">Observações</label>
+                            {{ form.observacoes }}
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'os_app:lista_usuarios' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i> Salvar Usuário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

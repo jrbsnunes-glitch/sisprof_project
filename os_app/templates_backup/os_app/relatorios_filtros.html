@@ -1,0 +1,428 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}Relatórios Personalizados - SISPROF{% endblock %}
+{% block page_title %}Relatórios Personalizados{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> <strong>Monte seu relatório:</strong> 
+            Selecione os filtros desejados e escolha quais campos quer visualizar no resultado.
+        </div>
+    </div>
+</div>
+
+<form method="GET" action="{% url 'os_app:relatorios_resultado' %}" id="formRelatorio">
+    
+    <!-- Seção 1: Seleção de Campos -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-list-check"></i> 1. Selecione os Campos para Exibir
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodos()">
+                        <i class="bi bi-check-all"></i> Selecionar Todos
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="deselecionarTodos()">
+                        <i class="bi bi-x-circle"></i> Limpar Seleção
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="selecionarPadroes()">
+                        <i class="bi bi-star"></i> Campos Padrão
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                {% for grupo, campos in campos_por_grupo.items %}
+                <div class="col-md-3 mb-3">
+                    <h6 class="text-primary">
+                        <i class="bi bi-folder"></i> {{ grupo }}
+                    </h6>
+                    <div class="campo-grupo">
+                        {% for campo in campos %}
+                        <div class="form-check">
+                            <input class="form-check-input campo-checkbox" 
+                                   type="checkbox" 
+                                   name="campos" 
+                                   value="{{ campo.id }}" 
+                                   id="campo_{{ campo.id }}"
+                                   {% if campo.id in 'id,nome,cargo,situacao_funcional,escola,area_atuacao' %}checked{% endif %}>
+                            <label class="form-check-label" for="campo_{{ campo.id }}">
+                                {{ campo.nome }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="alert alert-warning mt-3">
+                <i class="bi bi-lightbulb"></i> <strong>Dica:</strong> Campos marcados aparecerão como colunas no relatório.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Seção 2: Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel"></i> 2. Filtros de Busca
+            </h5>
+        </div>
+        <div class="card-body">
+            
+            <div class="row g-3">
+                
+                <!-- ID do Professor -->
+                <div class="col-md-2">
+                    <label for="professor_id" class="form-label">
+                        <i class="bi bi-hash"></i> ID do Professor
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="professor_id" 
+                           name="professor_id" 
+                           placeholder="Ex: 123">
+                    <small class="text-muted">Busca específica</small>
+                </div>
+                
+                <!-- Ref. Global -->
+                <div class="col-md-2">
+                    <label for="ref_global" class="form-label">
+                        <i class="bi bi-tag"></i> Ref. Global
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="ref_global" 
+                           name="ref_global" 
+                           placeholder="Ex: 2024001">
+                    <small class="text-muted">Referência global</small>
+                </div>
+                
+                <!-- Núcleo -->
+                <div class="col-md-3">
+                    <label for="nucleo" class="form-label">
+                        <i class="bi bi-buildings"></i> Núcleo
+                    </label>
+                    <select name="nucleo" id="nucleo" class="form-select">
+                        <option value="">Todos os Núcleos</option>
+                        {% for nucleo in nucleos %}
+                            <option value="{{ nucleo.id }}">{{ nucleo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Escola -->
+                <div class="col-md-3">
+                    <label for="escola" class="form-label">
+                        <i class="bi bi-building"></i> Escola
+                    </label>
+                    <select name="escola" id="escola" class="form-select">
+                        <option value="">Todas as Escolas</option>
+                        {% for escola in escolas %}
+                            <option value="{{ escola.id }}" data-nucleo="{{ escola.nucleo.id|default:'' }}">
+                                {{ escola.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Cargo -->
+                <div class="col-md-2">
+                    <label for="cargo" class="form-label">
+                        <i class="bi bi-briefcase"></i> Cargo
+                    </label>
+                    <select name="cargo" id="cargo" class="form-select">
+                        <option value="">Todos os Cargos</option>
+                        {% for cargo in cargos %}
+                            <option value="{{ cargo.id }}">{{ cargo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Situação Funcional -->
+                <div class="col-md-2">
+                    <label for="situacao" class="form-label">
+                        <i class="bi bi-person-badge"></i> Situação
+                    </label>
+                    <select name="situacao" id="situacao" class="form-select">
+                        <option value="">Todas</option>
+                        {% for value, label in situacoes %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Área de Atuação -->
+                <div class="col-md-3">
+                    <label for="area" class="form-label">
+                        <i class="bi bi-book"></i> Área de Atuação
+                    </label>
+                    <select name="area" id="area" class="form-select">
+                        <option value="">Todas as Áreas</option>
+                        {% for value, label in areas %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+    <label class="form-label">
+        <i class="bi bi-book me-1"></i> Matéria
+    </label>
+    <select name="materia" class="form-select">
+        <option value="">Todas as matérias</option>
+        {% for value, label in materias %}
+            <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+    </select>
+    <small class="text-muted">Filtra professores que lecionam esta matéria</small>
+</div>
+                
+                <!-- Série -->
+                <div class="col-md-2">
+                    <label for="serie" class="form-label">
+                        <i class="bi bi-123"></i> Série
+                    </label>
+                    <select name="serie" id="serie" class="form-select">
+                        <option value="">Todas as Séries</option>
+                        {% for serie in series %}
+                            <option value="{{ serie.id }}">{{ serie.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Modalidade -->
+                <div class="col-md-2">
+                    <label for="modalidade" class="form-label">
+                        <i class="bi bi-diagram-3"></i> Modalidade
+                    </label>
+                    <select name="modalidade" id="modalidade" class="form-select">
+                        <option value="">Todas</option>
+                        {% for value, label in modalidades %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Turno -->
+                <div class="col-md-2">
+                    <label for="turno" class="form-label">
+                        <i class="bi bi-clock"></i> Turno
+                    </label>
+                    <select name="turno" id="turno" class="form-select">
+                        <option value="">Todos</option>
+                        {% for value, label in turnos %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Em Sala -->
+                <div class="col-md-2">
+                    <label for="em_sala" class="form-label">
+                        <i class="bi bi-door-open"></i> Em Sala
+                    </label>
+                    <select name="em_sala" id="em_sala" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="sim">Sim</option>
+                        <option value="nao">Não</option>
+                    </select>
+                </div>
+                
+                <!-- Bairro -->
+                <div class="col-md-3">
+                    <label for="bairro" class="form-label">
+                        <i class="bi bi-signpost"></i> Bairro
+                    </label>
+                    <select name="bairro" id="bairro" class="form-select">
+                        <option value="">Todos os Bairros</option>
+                        {% for bairro in bairros %}
+                            <option value="{{ bairro.id }}">{{ bairro.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Cidade -->
+                <div class="col-md-3">
+                    <label for="cidade" class="form-label">
+                        <i class="bi bi-geo-alt"></i> Cidade
+                    </label>
+                    <input type="text" 
+                           name="cidade" 
+                           id="cidade" 
+                           class="form-control" 
+                           placeholder="Ex: Manaus">
+                </div>
+                
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-lightbulb"></i> <strong>Exemplo de uso:</strong>
+                Para encontrar "professores efetivos da série 1º ano que estão na área matemática na escola X":
+                <ul class="mb-0 mt-2">
+                    <li>Situação: <strong>Efetivo</strong></li>
+                    <li>Série: <strong>1º ano</strong></li>
+                    <li>Área de Atuação: <strong>Matemática</strong></li>
+                    <li>Escola: <strong>Selecione a escola X</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botões de Ação -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body text-center">
+            <button type="submit" class="btn btn-primary btn-lg me-2">
+                <i class="bi bi-file-earmark-bar-graph"></i> Gerar Relatório
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-lg me-2" onclick="limparFiltros()">
+                <i class="bi bi-x-circle"></i> Limpar Tudo
+            </button>
+            <a href="{% url 'os_app:index' %}" class="btn btn-outline-danger btn-lg">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Modelos Prontos -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">
+                <i class="bi bi-star"></i> Relatórios Rápidos (Modelos Prontos)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="relatorioCompleto()">
+                        <i class="bi bi-people"></i> Todos os Professores
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="relatorioSemEscola()">
+                        <i class="bi bi-question-circle"></i> Sem Escola
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="relatorioEfetivos()">
+                        <i class="bi bi-person-check"></i> Apenas Efetivos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</form>
+
+<style>
+.campo-grupo {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.form-check {
+    padding: 5px 0;
+}
+
+.form-check-label {
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.card-header h5 {
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+// Filtrar escolas por núcleo
+document.getElementById('nucleo').addEventListener('change', function() {
+    const nucleoId = this.value;
+    const escolaSelect = document.getElementById('escola');
+    const options = escolaSelect.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') {
+            option.style.display = '';
+            return;
+        }
+        
+        const optionNucleo = option.getAttribute('data-nucleo');
+        if (!nucleoId || optionNucleo === nucleoId) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // Reset escola se não compatível
+    if (escolaSelect.selectedOptions[0]?.style.display === 'none') {
+        escolaSelect.value = '';
+    }
+});
+
+// Selecionar todos campos
+function selecionarTodos() {
+    document.querySelectorAll('.campo-checkbox').forEach(cb => cb.checked = true);
+}
+
+// Desselecionar todos
+function deselecionarTodos() {
+    document.querySelectorAll('.campo-checkbox').forEach(cb => cb.checked = false);
+}
+
+// Selecionar padrões
+function selecionarPadroes() {
+    deselecionarTodos();
+    const padroes = ['id', 'nome', 'cargo', 'situacao_funcional', 'escola', 'area_atuacao'];
+    padroes.forEach(campo => {
+        const cb = document.getElementById('campo_' + campo);
+        if (cb) cb.checked = true;
+    });
+}
+
+// Limpar filtros
+function limparFiltros() {
+    document.getElementById('formRelatorio').reset();
+    selecionarPadroes();
+}
+
+// Relatórios rápidos
+function relatorioCompleto() {
+    selecionarPadroes();
+    document.getElementById('formRelatorio').submit();
+}
+
+function relatorioSemEscola() {
+    // Implementar lógica específica
+    alert('Funcionalidade em desenvolvimento');
+}
+
+function relatorioEfetivos() {
+    selecionarPadroes();
+    document.getElementById('situacao').value = 'efetivo'; // Ajustar valor conforme CHOICES
+    document.getElementById('formRelatorio').submit();
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    // Selecionar campos padrão se nenhum marcado
+    const algumMarcado = Array.from(document.querySelectorAll('.campo-checkbox')).some(cb => cb.checked);
+    if (!algumMarcado) {
+        selecionarPadroes();
+    }
+});
+</script>
+
+{% endblock %}

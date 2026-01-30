@@ -5,8 +5,31 @@
 
 {% block content %}
 
-<!-- Estatísticas -->
-<div class="row g-3 mb-4">
+<!-- Cabeçalho apenas para impressão (mesma estrutura do PDF: brasão à esquerda, logo SEMEC à direita) -->
+<div id="printHeaderRelatorio" class="print-only-header-relatorio mb-3">
+    <div class="print-header-relatorio-top">
+        <div class="print-header-left">
+            <img src="{{ media_url }}relatorios/brasao.jpg" alt="Brasão Prefeitura" class="print-brasao" onerror="this.style.display='none'">
+            <div class="print-header-textos">
+                <div class="print-prefeitura">PREFEITURA MUNICIPAL DE MANACAPURU</div>
+                <div class="print-secretaria">SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA</div>
+                <div class="print-semec">SEMEC - Sistema de Gestão de Professores</div>
+            </div>
+        </div>
+        <div class="print-header-right">
+            <img src="{{ media_url }}relatorios/semec.jpg" alt="Logo SEMEC" class="print-logo-semec" onerror="this.style.display='none'">
+        </div>
+    </div>
+    <div class="print-header-line"></div>
+    <div class="print-header-titulo">Relatório de Professores</div>
+    <div class="print-header-subtitulo">
+        <span>Gerado em: <span id="printDataHoraRelatorio"></span></span>
+        <span>Usuário: {{ user.get_full_name|default:user.username }}</span>
+    </div>
+</div>
+
+<!-- Estatísticas (não imprimir) -->
+<div class="row g-3 mb-4 no-print">
     <div class="col-md-4">
         <div class="card bg-primary text-white">
             <div class="card-body">
@@ -33,9 +56,9 @@
     </div>
 </div>
 
-<!-- Filtros Aplicados -->
+<!-- Filtros Aplicados (não imprimir) -->
 {% if filtros_aplicados %}
-<div class="alert alert-info">
+<div class="alert alert-info no-print">
     <strong><i class="bi bi-funnel"></i> Filtros aplicados:</strong>
     <ul class="mb-0 mt-2">
         {% for filtro in filtros_aplicados %}
@@ -45,29 +68,24 @@
 </div>
 {% endif %}
 
-<!-- Campos Selecionados -->
-<div class="alert alert-success">
+<!-- Campos Selecionados (não imprimir) -->
+<div class="alert alert-success no-print">
     <strong><i class="bi bi-list-check"></i> Campos exibidos ({{ campos_selecionados|length }}):</strong>
     {% for campo in campos_selecionados %}
         <span class="badge bg-success">{{ campos_labels|dictsort:campo }}</span>
     {% endfor %}
 </div>
 
-<!-- Botões de Ação -->
-<div class="card shadow-sm mb-3">
+<!-- Botões de Ação (não imprimir) -->
+<div class="card shadow-sm mb-3 no-print">
     <div class="card-body">
         <div class="btn-group" role="group">
             <a href="{% url 'os_app:relatorios_filtros' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left"></i> Voltar aos Filtros
             </a>
-            <button onclick="window.print()" class="btn btn-outline-secondary">
+            <button onclick="imprimirRelatorio()" class="btn btn-outline-secondary">
                 <i class="bi bi-printer"></i> Imprimir
             </button>
-            <a href="{% url 'os_app:relatorios_pdf' %}?{{ request.GET.urlencode }}" 
-               class="btn btn-outline-danger" 
-               target="_blank">
-                <i class="bi bi-file-pdf"></i> Exportar PDF
-            </a>
             <button onclick="exportarExcel()" class="btn btn-outline-success">
                 <i class="bi bi-file-earmark-excel"></i> Exportar Excel
             </button>
@@ -84,9 +102,39 @@
                     <tr>
                         <th style="width: 40px;">#</th>
                         {% for campo in campos_selecionados %}
-                            <th>{{ campos_labels|dictsort:campo }}</th>
+                            <th>
+                                {% if campo == 'id' %}ID
+                                {% elif campo == 'nome' %}Nome
+                                {% elif campo == 'cpf' %}CPF
+                                {% elif campo == 'email' %}Email
+                                {% elif campo == 'telefone' %}Telefone
+                                {% elif campo == 'celular' %}Celular
+                                {% elif campo == 'cargo' %}Cargo
+                                {% elif campo == 'situacao_funcional' %}Situação
+                                {% elif campo == 'matricula' %}Matrícula
+                                {% elif campo == 'ref_global' %}Ref. Global
+                                {% elif campo == 'area_atuacao' %}Área
+                                {% elif campo == 'modalidade' %}Modalidade
+                                {% elif campo == 'turno' %}Turno
+                                {% elif campo == 'serie' %}Série
+                                {% elif campo == 'em_sala' %}Em Sala
+                                {% elif campo == 'escola' %}Escola
+                                {% elif campo == 'escola_nucleo' %}Núcleo
+                                {% elif campo == 'endereco_escola' %}End. Escola
+                                {% elif campo == 'zona_escola' %}Zona
+                                {% elif campo == 'endereco' %}Endereço
+                                {% elif campo == 'bairro' %}Bairro
+                                {% elif campo == 'cidade' %}Cidade
+                                {% elif campo == 'estado' %}Estado
+                                {% elif campo == 'cep' %}CEP
+                                {% elif campo == 'data_nascimento' %}Dt. Nasc.
+                                {% elif campo == 'sexo' %}Sexo
+                                {% elif campo == 'data_cadastro' %}Dt. Cadastro
+                                {% else %}{{ campo }}
+                                {% endif %}
+                            </th>
                         {% endfor %}
-                        <th style="width: 80px;" class="text-center">Ações</th>
+                        <th style="width: 80px;" class="text-center no-print-col">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -150,6 +198,16 @@
                                     {% else %}
                                         -
                                     {% endif %}
+
+                                    {% if 'materias' in campos_selecionados %}
+                                    <td>
+                                     {% if professor.materias %}
+                                    {{ professor.get_materias_display|join:", " }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    </td>
+                                {% endif %}
                                     
                                 {% elif campo == 'modalidade' %}
                                     {{ professor.get_modalidade_display|default:"-" }}
@@ -166,16 +224,6 @@
                                     {% else %}
                                         <span class="badge bg-secondary">Não</span>
                                     {% endif %}
-
-                                {% if 'materias' in campos_selecionados %}
-                                    <td>
-                                     {% if professor.materias %}
-                                    {{ professor.get_materias_display|join:", " }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                    </td>
-                                {% endif %}
                                     
                                 {% elif campo == 'escola' %}
                                     {% if professor.escola %}
@@ -247,7 +295,7 @@
                         {% endfor %}
                         
                         <!-- Ações -->
-                        <td class="text-center">
+                        <td class="text-center no-print-col">
                             <a href="{% url 'os_app:detalhe_professor' professor.id %}" 
                                class="btn btn-sm btn-outline-primary"
                                title="Ver detalhes"
@@ -273,7 +321,7 @@
     </div>
     
     {% if professores %}
-    <div class="card-footer bg-light">
+    <div class="card-footer bg-light no-print">
         <small class="text-muted">
             Total de registros: <strong>{{ professores.count }}</strong>
         </small>
@@ -282,8 +330,121 @@
 </div>
 
 <style>
+/* Cabeçalho de impressão: oculto na tela, mesma estrutura do PDF */
+.print-only-header-relatorio {
+    display: none !important;
+}
+
 @media print {
-    .btn, .btn-group, .card-footer, .alert {
+    .print-only-header-relatorio {
+        display: block !important;
+    }
+    
+    .print-header-relatorio-top {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+    }
+    
+    .print-header-left {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    
+    .print-brasao {
+        width: 75px !important;
+        height: 75px !important;
+        object-fit: contain !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .print-header-textos {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+    
+    .print-prefeitura {
+        font-family: Helvetica, Arial, sans-serif !important;
+        font-weight: bold !important;
+        font-size: 10pt !important;
+        line-height: 1.2 !important;
+    }
+    
+    .print-secretaria {
+        font-family: Helvetica, Arial, sans-serif !important;
+        font-weight: bold !important;
+        font-size: 9pt !important;
+        line-height: 1.2 !important;
+    }
+    
+    .print-semec {
+        font-family: Helvetica, Arial, sans-serif !important;
+        font-size: 7pt !important;
+        line-height: 1.2 !important;
+        color: #333 !important;
+    }
+    
+    .print-logo-semec {
+        width: 190px !important;
+        height: auto !important;
+        max-height: 57px !important;
+        object-fit: contain !important;
+    }
+    
+    .print-header-line {
+        border: none !important;
+        height: 2px !important;
+        background: #0d6efd !important;
+        margin: 10px 0 8px 0 !important;
+    }
+    
+    .print-header-titulo {
+        font-family: Helvetica, Arial, sans-serif !important;
+        font-weight: bold !important;
+        font-size: 14pt !important;
+        color: #0d6efd !important;
+        text-align: center !important;
+        margin-bottom: 6px !important;
+    }
+    
+    .print-header-subtitulo {
+        display: flex !important;
+        justify-content: space-between !important;
+        font-size: 8pt !important;
+        color: #666 !important;
+        margin-bottom: 10px !important;
+    }
+}
+
+@media print {
+    @page {
+        size: landscape;
+    }
+    
+    .sidebar,
+    .sidebar-toggle,
+    .topbar,
+    .main-wrapper .topbar,
+    .no-print,
+    .btn,
+    .btn-group,
+    .card-footer,
+    .alert {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    
+    .no-print-col,
+    th.no-print-col,
+    td.no-print-col {
         display: none !important;
     }
     
@@ -291,17 +452,41 @@
         font-size: 8pt !important;
     }
     
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
     .badge {
         border: 1px solid #000 !important;
         background: white !important;
         color: black !important;
     }
+    
+    body {
+        background: #fff !important;
+    }
 }
 </style>
 
 <script>
+function imprimirRelatorio() {
+    var agora = new Date();
+    var dataHora = agora.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    var el = document.getElementById('printDataHoraRelatorio');
+    if (el) el.textContent = dataHora;
+    window.print();
+}
+
 function exportarExcel() {
-    alert('Funcionalidade de exportação para Excel em desenvolvimento.\nPor enquanto, use Imprimir ou Exportar PDF.');
+    alert('Funcionalidade de exportação para Excel em desenvolvimento.\nPor enquanto, use Imprimir.');
 }
 </script>
 

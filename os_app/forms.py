@@ -33,7 +33,7 @@ class ProfessorForm(forms.ModelForm):
             'nome', 'cpf', 'ref_global', 'foto', 'telefone', 'email',
             'matricula', 'cargo', 'situacao_funcional', 'area_atuacao', 
             'escola_lotacao', 'escola_nucleo',
-            'bairro', 'numero', 'complemento',
+            'cep', 'endereco', 'numero', 'bairro', 'cidade', 'estado', 'complemento',
             'modalidade', 'serie', 'turno', 'carga_horaria',
             'em_sala', 'motivo_fora_sala',
             'observacoes'
@@ -88,8 +88,31 @@ class ProfessorForm(forms.ModelForm):
             'escola_nucleo': forms.HiddenInput(attrs={
                 'id': 'id_escola_nucleo'
             }),
-            'bairro': forms.HiddenInput(attrs={
+            'cep': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '00000-000',
+                'maxlength': '9',
+                'id': 'id_cep'
+            }),
+            'endereco': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Rua, Avenida, etc.',
+                'id': 'id_endereco'
+            }),
+            'bairro': forms.Select(attrs={
+                'class': 'form-control',
                 'id': 'id_bairro'
+            }),
+            'cidade': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Cidade',
+                'id': 'id_cidade'
+            }),
+            'estado': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'UF',
+                'maxlength': '2',
+                'id': 'id_estado'
             }),
             'numero': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -132,6 +155,10 @@ class ProfessorForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         self.fields['escola_lotacao'].queryset = Escola.objects.select_related('nucleo').order_by('nucleo__nome', 'nome')
+        
+        # Configurar bairro
+        self.fields['bairro'].queryset = Bairro.objects.all().order_by('nome')
+        self.fields['bairro'].empty_label = "Selecione o bairro"
         
         if self.instance.pk and self.instance.escola_lotacao:
             self.fields['nucleo'].initial = self.instance.escola_lotacao.nucleo
@@ -428,4 +455,4 @@ class LoginForm(AuthenticationForm):
             'placeholder': 'Senha'
         }),
         label='Senha'
-    ) 
+    )

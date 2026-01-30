@@ -5,8 +5,23 @@
 
 {% block content %}
 
-<!-- Cabeçalho -->
-<div class="row mb-3">
+<!-- Cabeçalho apenas para impressão (oculto na tela) -->
+<div id="printHeader" class="print-only-header mb-3">
+    <div class="d-flex justify-content-between align-items-start border-bottom border-dark pb-2 mb-2">
+        <div>
+            <h4 class="mb-0 fw-bold">SISPROF</h4>
+            <p class="mb-0 mt-1">Lista de professores</p>
+        </div>
+        <div class="text-end small">
+            <div><strong>Data e hora da geração:</strong></div>
+            <div id="printDataHora"></div>
+            <div class="mt-1"><strong>Usuário:</strong> {{ user.get_full_name|default:user.username }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Cabeçalho (não imprimir) -->
+<div class="row mb-3 no-print">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -28,8 +43,8 @@
     </div>
 </div>
 
-<!-- Filtros Rápidos -->
-<div class="card shadow-sm mb-3">
+<!-- Filtros Rápidos (não imprimir) -->
+<div class="card shadow-sm mb-3 no-print">
     <div class="card-body py-2">
         <div class="row g-2">
             <div class="col-md-4">
@@ -59,7 +74,7 @@
                 </button>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-sm btn-outline-primary w-100" onclick="window.print()">
+                <button class="btn btn-sm btn-outline-primary w-100" onclick="imprimirLista()">
                     <i class="bi bi-printer"></i> Imprimir
                 </button>
             </div>
@@ -68,13 +83,13 @@
 </div>
 
 <!-- Tabela de Professores -->
-<div class="card shadow-sm">
+<div class="card shadow-sm" id="printArea">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-sm table-hover mb-0" id="professoresTable" style="font-size: 0.8rem;">
                 <thead class="table-dark">
                     <tr>
-                        <th style="width: 40px;" class="text-center">
+                        <th style="width: 40px;" class="text-center no-print-col">
                             <input type="checkbox" id="selectAll" class="form-check-input">
                         </th>
                         <th style="width: 50px;">ID</th>
@@ -86,7 +101,7 @@
                         <th style="width: 70px;">Zona</th>
                         <th style="width: 100px;">Modalidade</th>
                         <th style="width: 120px;">Área Atuação</th>
-                        <th style="width: 100px;" class="text-center">Ações</th>
+                        <th style="width: 100px;" class="text-center no-print-col">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,7 +112,7 @@
                         data-escola="{% if professor.escola or professor.escola_nucleo %}com_escola{% else %}sem_escola{% endif %}">
                         
                         <!-- Checkbox -->
-                        <td class="text-center">
+                        <td class="text-center no-print-col">
                             <input type="checkbox" class="form-check-input row-checkbox">
                         </td>
                         
@@ -239,7 +254,7 @@
                         </td>
                         
                         <!-- Ações -->
-                        <td class="text-center">
+                        <td class="text-center no-print-col">
     <div class="btn-group btn-group-sm" role="group">
         <!-- Visualizar -->
         <a href="{% url 'os_app:detalhe_professor' professor.id %}" 
@@ -248,7 +263,7 @@
             <i class="bi bi-eye"></i>
         </a>
         
-        <!-- Editar -->
+       <!-- Editar -->
         {% if user.is_superuser or user.perfil.pode_editar_professor %}
         <a href="{% url 'os_app:editar_professor' professor.id %}" 
            class="btn btn-outline-primary" 
@@ -298,7 +313,7 @@
     </div>
     
     {% if professores %}
-    <div class="card-footer bg-light">
+    <div class="card-footer bg-light no-print">
         <div class="d-flex justify-content-between align-items-center">
             <small class="text-muted">
                 <span id="selectedCount">0</span> selecionado(s)
@@ -342,8 +357,41 @@
     text-overflow: ellipsis;
 }
 
+/* Cabeçalho de impressão: oculto na tela */
+.print-only-header {
+    display: none !important;
+}
+
 @media print {
-    .no-print, .btn, .card-footer, .form-control, .form-select {
+    /* Esconder menu, topbar e elementos da tela */
+    .sidebar,
+    .sidebar-toggle,
+    .topbar,
+    .main-wrapper .topbar,
+    .no-print,
+    .btn,
+    .card-footer,
+    .form-control,
+    .form-select {
+        display: none !important;
+    }
+    
+    /* Mostrar apenas o cabeçalho de impressão e a tabela */
+    .print-only-header {
+        display: block !important;
+    }
+    
+    /* Conteúdo em tela cheia (sem sidebar) */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    
+    /* Ocultar coluna checkbox e coluna Ações na impressão */
+    .no-print-col,
+    th.no-print-col,
+    td.no-print-col {
         display: none !important;
     }
     
@@ -354,6 +402,10 @@
     .card {
         border: none !important;
         box-shadow: none !important;
+    }
+    
+    body {
+        background: #fff !important;
     }
 }
 </style>
@@ -428,6 +480,21 @@ function confirmarExclusao(id, nome) {
 
 function exportarExcel() {
     alert('Funcionalidade de exportação a ser implementada!');
+}
+
+function imprimirLista() {
+    var agora = new Date();
+    var dataHora = agora.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    var el = document.getElementById('printDataHora');
+    if (el) el.textContent = dataHora;
+    window.print();
 }
 
 // Inicializar

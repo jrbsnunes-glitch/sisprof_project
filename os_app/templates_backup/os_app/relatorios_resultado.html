@@ -84,37 +84,7 @@
                     <tr>
                         <th style="width: 40px;">#</th>
                         {% for campo in campos_selecionados %}
-                            <th>
-                                {% if campo == 'id' %}ID
-                                {% elif campo == 'nome' %}Nome
-                                {% elif campo == 'cpf' %}CPF
-                                {% elif campo == 'email' %}Email
-                                {% elif campo == 'telefone' %}Telefone
-                                {% elif campo == 'celular' %}Celular
-                                {% elif campo == 'cargo' %}Cargo
-                                {% elif campo == 'situacao_funcional' %}Situação
-                                {% elif campo == 'matricula' %}Matrícula
-                                {% elif campo == 'ref_global' %}Ref. Global
-                                {% elif campo == 'area_atuacao' %}Área
-                                {% elif campo == 'modalidade' %}Modalidade
-                                {% elif campo == 'turno' %}Turno
-                                {% elif campo == 'serie' %}Série
-                                {% elif campo == 'em_sala' %}Em Sala
-                                {% elif campo == 'escola' %}Escola
-                                {% elif campo == 'escola_nucleo' %}Núcleo
-                                {% elif campo == 'endereco_escola' %}End. Escola
-                                {% elif campo == 'zona_escola' %}Zona
-                                {% elif campo == 'endereco' %}Endereço
-                                {% elif campo == 'bairro' %}Bairro
-                                {% elif campo == 'cidade' %}Cidade
-                                {% elif campo == 'estado' %}Estado
-                                {% elif campo == 'cep' %}CEP
-                                {% elif campo == 'data_nascimento' %}Dt. Nasc.
-                                {% elif campo == 'sexo' %}Sexo
-                                {% elif campo == 'data_cadastro' %}Dt. Cadastro
-                                {% else %}{{ campo }}
-                                {% endif %}
-                            </th>
+                            <th>{{ campos_labels|dictsort:campo }}</th>
                         {% endfor %}
                         <th style="width: 80px;" class="text-center">Ações</th>
                     </tr>
@@ -180,16 +150,6 @@
                                     {% else %}
                                         -
                                     {% endif %}
-
-                                    {% if 'materias' in campos_selecionados %}
-                                    <td>
-                                     {% if professor.materias %}
-                                    {{ professor.get_materias_display|join:", " }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                    </td>
-                                {% endif %}
                                     
                                 {% elif campo == 'modalidade' %}
                                     {{ professor.get_modalidade_display|default:"-" }}
@@ -206,6 +166,16 @@
                                     {% else %}
                                         <span class="badge bg-secondary">Não</span>
                                     {% endif %}
+
+                                {% if 'materias' in campos_selecionados %}
+                                    <td>
+                                     {% if professor.materias %}
+                                    {{ professor.get_materias_display|join:", " }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    </td>
+                                {% endif %}
                                     
                                 {% elif campo == 'escola' %}
                                     {% if professor.escola %}
