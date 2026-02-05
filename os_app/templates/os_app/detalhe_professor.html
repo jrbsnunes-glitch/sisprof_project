@@ -265,14 +265,14 @@
                     </div>
 
                     <!-- ============================================================ -->
-                    <!-- MATÉRIAS - CORRIGIDO -->
+                    <!-- MATÉRIAS -->
                     <!-- ============================================================ -->
                     <div class="row mb-3">
                         <div class="col-12">
                             <p class="mb-2">
                                 <strong><i class="bi bi-book"></i> Matérias:</strong><br>
-                                {% if professor.materias %}
-                                    {% for materia_display in professor.get_materias_display %}
+                                {% if professor.disciplinas and professor.disciplinas.strip %}
+                                    {% for materia_display in professor.get_disciplinas_display_list %}
                                         {% if 'Português' in materia_display %}
                                             <span class="badge bg-primary me-1 mb-1 fs-6 py-2 px-3">
                                                 📖 {{ materia_display }}

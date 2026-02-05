@@ -367,24 +367,16 @@
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="bairro_search" class="form-label fw-bold">
+                                <label for="id_bairro" class="form-label fw-bold">
                                     <i class="bi bi-signpost"></i> Bairro
                                 </label>
                                 <div class="input-group">
-                                    <input type="text" id="bairro_search" class="form-control" 
-                                           placeholder="Digite para buscar ou adicionar..." autocomplete="off">
                                     {{ form.bairro }}
                                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" 
                                             data-bs-target="#modalBairro" title="Adicionar novo bairro">
                                         <i class="bi bi-plus-circle"></i>
                                     </button>
-                                    <button type="button" class="btn btn-outline-secondary" id="btnLimparBairro" 
-                                            title="Limpar seleção">
-                                        <i class="bi bi-x"></i>
-                                    </button>
                                 </div>
-                                <div id="bairro_resultados" class="list-group position-absolute w-100" 
-                                     style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
                                 {% if form.bairro.errors %}
                                     <div class="text-danger mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.bairro.errors }}</div>
                                 {% endif %}
@@ -491,7 +483,7 @@
                                                    name="materias_selecionadas" 
                                                    value="{{ value }}"
                                                    id="id_materia_{{ forloop.counter }}"
-                                                   {% if value in form.materias_selecionadas.value %}checked{% endif %}>
+                                                   {% if form.materias_selecionadas.value and value in form.materias_selecionadas.value %}checked{% endif %}>
                                             <label class="form-check-label" for="id_materia_{{ forloop.counter }}">
                                                 {{ label }}
                                             </label>
@@ -1724,93 +1716,6 @@ if (cepInputElement) {
         document.getElementById('dependente_bairro_selecionado').innerHTML = '';
     };
     
-    // ===== AUTOCOMPLETE DE BAIRRO (PROFESSOR) =====
-    const bairroSearch = document.getElementById('bairro_search');
-    const bairroHidden = document.getElementById('id_bairro');
-    const bairroResultados = document.getElementById('bairro_resultados');
-    const btnLimparBairro = document.getElementById('btnLimparBairro');
-    const bairroSelecionado = document.getElementById('bairro_selecionado');
-    
-    if (bairroSearch) {
-        let timeoutBusca;
-        
-        // Se já existe um bairro selecionado (edição), buscar e mostrar
-        if (bairroHidden.value) {
-            fetch(`{% url 'os_app:buscar_bairros_ajax' %}?q=id:${bairroHidden.value}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.length > 0) {
-                        bairroSearch.value = data[0].nome_completo;
-                        bairroSelecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${data[0].nome_completo}`;
-                    }
-                })
-                .catch(err => console.error('Erro ao carregar bairro:', err));
-        }
-        
-        // Busca em tempo real
-        bairroSearch.addEventListener('input', function() {
-            clearTimeout(timeoutBusca);
-            const termo = this.value.trim();
-            
-            if (termo.length < 2) {
-                bairroResultados.style.display = 'none';
-                return;
-            }
-            
-            timeoutBusca = setTimeout(() => {
-                bairroResultados.innerHTML = '<div class="list-group-item"><i class="bi bi-hourglass-split"></i> Buscando...</div>';
-                bairroResultados.style.display = 'block';
-                
-                fetch(`{% url 'os_app:buscar_bairros_ajax' %}?q=${encodeURIComponent(termo)}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.length === 0) {
-                            bairroResultados.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-info-circle"></i> Nenhum bairro encontrado. Clique no + para adicionar.</div>';
-                        } else {
-                            bairroResultados.innerHTML = '';
-                            data.forEach(bairro => {
-                                const item = document.createElement('a');
-                                item.href = '#';
-                                item.className = 'list-group-item list-group-item-action';
-                                item.dataset.id = bairro.id;
-                                item.dataset.nome = bairro.nome;
-                                item.dataset.nomeCompleto = bairro.nome_completo;
-                                item.innerHTML = `<i class="bi bi-signpost"></i> ${bairro.nome_completo}`;
-                                bairroResultados.appendChild(item);
-                                
-                                item.addEventListener('click', function(e) {
-                                    e.preventDefault();
-                                    bairroSearch.value = this.dataset.nomeCompleto;
-                                    bairroHidden.value = this.dataset.id;
-                                    bairroResultados.style.display = 'none';
-                                    bairroSelecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${this.dataset.nomeCompleto}`;
-                                });
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        bairroResultados.innerHTML = '<div class="list-group-item text-danger"><i class="bi bi-exclamation-circle"></i> Erro ao buscar</div>';
-                    });
-            }, 300);
-        });
-        
-        // Fechar resultados ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!bairroSearch.contains(e.target) && !bairroResultados.contains(e.target)) {
-                bairroResultados.style.display = 'none';
-            }
-        });
-    }
-    
-    // Limpar seleção de bairro
-    btnLimparBairro?.addEventListener('click', function() {
-        bairroSearch.value = '';
-        bairroHidden.value = '';
-        bairroResultados.style.display = 'none';
-        bairroSelecionado.innerHTML = '';
-    });
-    
     // Modal Bairro - Máscara UF
     const modalBairroEstado = document.getElementById('modal_bairro_estado');
     if (modalBairroEstado) {
@@ -1864,10 +1769,15 @@ if (cepInputElement) {
                     document.getElementById('id_escola_bairro').value = d.id;
                     document.getElementById('dependente_bairro_selecionado').innerHTML = `<i class="bi bi-check-circle text-success"></i> ${d.nome_completo}`;
                 } else {
-                    // Cadastro de Professor
-                    bairroSearch.value = d.nome_completo;
-                    bairroHidden.value = d.id;
-                    bairroSelecionado.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${d.nome_completo}`;
+                    // Cadastro/Edição de Professor: adiciona o novo bairro ao dropdown e seleciona
+                    const selBairro = document.getElementById('id_bairro');
+                    if (selBairro) {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.nome_completo;
+                        selBairro.appendChild(opt);
+                        selBairro.value = d.id;
+                    }
                 }
                 
                 // Fecha modal
@@ -2206,17 +2116,7 @@ if (cepInputElement) {
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🔄 Modo EDIÇÃO ativado');
         
-        // 1. BAIRRO
-        {% if professor.bairro %}
-        const bairroInput = document.getElementById('bairro_search');
-        if (bairroInput) {
-            bairroInput.value = '{{ professor.bairro.nome }}';
-            document.getElementById('id_bairro').value = '{{ professor.bairro.id }}';
-            console.log('✅ Bairro inicializado:', '{{ professor.bairro.nome }}');
-        }
-        {% endif %}
-        
-        // 2. GARANTIR VISIBILIDADE
+        // 1. GARANTIR VISIBILIDADE
         ['id_situacao_funcional', 'id_serie', 'id_modalidade', 'id_turno', 'id_em_sala', 'id_substituto', 'id_observacoes'].forEach(function(id) {
             const campo = document.getElementById(id);
             if (campo) {
@@ -2234,6 +2134,41 @@ if (cepInputElement) {
         console.log('✅ Campos inicializados!');
     });
 {% endif %}
+</script>
+
+<script>
+// Atualizar área de badges de matérias (exibição das selecionadas)
+function atualizarBadgesMaterias() {
+    var container = document.getElementById('materias-badges-display');
+    var emptyMsg = document.getElementById('materias-empty-msg');
+    if (!container) return;
+    var checkboxes = document.querySelectorAll('.materia-checkbox:checked');
+    if (checkboxes.length === 0) {
+        if (emptyMsg) emptyMsg.style.display = 'inline';
+        var badges = container.querySelectorAll('.badge.materia-badge-dinamico');
+        badges.forEach(function(b) { b.remove(); });
+        return;
+    }
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    var existing = container.querySelectorAll('.badge.materia-badge-dinamico');
+    existing.forEach(function(b) { b.remove(); });
+    checkboxes.forEach(function(cb) {
+        var formCheck = cb.closest('.form-check');
+        var labelEl = formCheck ? formCheck.querySelector('.form-check-label') : null;
+        var label = labelEl ? labelEl.textContent.trim() : cb.value;
+        var badge = document.createElement('span');
+        badge.className = 'badge bg-primary me-2 mb-2 materia-badge-dinamico';
+        badge.textContent = label;
+        container.appendChild(badge);
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var checkboxes = document.querySelectorAll('.materia-checkbox');
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', atualizarBadgesMaterias);
+    });
+    atualizarBadgesMaterias();
+});
 </script>
 
 {% endblock %}
