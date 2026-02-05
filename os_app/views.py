@@ -882,6 +882,8 @@ def relatorios_filtros(request):
             campos_por_grupo[grupo] = []
         campos_por_grupo[grupo].append(campo)
     
+    # Parâmetros GET para pré-preencher o formulário (quando volta do resultado)
+    get_campos = request.GET.getlist('campos')
     context = {
         'nucleos': nucleos,
         'escolas': escolas,
@@ -896,6 +898,8 @@ def relatorios_filtros(request):
         'campos_por_grupo': campos_por_grupo,
         'pdf_available': PDF_AVAILABLE,
         'materias': materias,
+        'get_campos': get_campos,
+        'get_params': request.GET,
     }
     
     return render(request, 'os_app/relatorios_filtros.html', context)
@@ -1101,7 +1105,7 @@ def relatorios_resultado(request):
 
     if materia:
         from .models import MATERIAS_CHOICES
-        professores = professores.filter(materias__icontains=materia)
+        professores = professores.filter(disciplinas__icontains=materia)
         materia_nome = dict(MATERIAS_CHOICES).get(materia, materia)
         filtros_aplicados.append(f"Matéria: {materia_nome}")
     
@@ -1198,6 +1202,7 @@ def relatorios_pdf(request):
         'matricula': 'Matrícula',
         'ref_global': 'Ref. Global',
         'area_atuacao': 'Área de Atuação',
+        'materias': 'Matérias',
         'modalidade': 'Modalidade',
         'turno': 'Turno',
         'serie': 'Série',
@@ -1381,17 +1386,13 @@ def get_campo_valor_pdf(professor, campo):
     elif campo == 'area_atuacao':
         return professor.get_area_atuacao_display() if professor.area_atuacao else '-'
     elif campo == 'materias':
-        if professor.materias:
-            materias_list = professor.get_materias_display()
-            if materias_list:
-                materias_str = ', '.join(materias_list)
+        if professor.disciplinas:
+            materias_str = professor.get_disciplinas_display()
+            if materias_str:
                 if len(materias_str) > 50:
                     return materias_str[:47] + '...'
                 return materias_str
         return '-'
-    
-    elif campo == 'modalidade':
-        return professor.get_modalidade_display() if professor.modalidade else '-'
     elif campo == 'modalidade':
         return professor.get_modalidade_display() if professor.modalidade else '-'
     elif campo == 'turno':

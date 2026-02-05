@@ -357,6 +357,14 @@ class Professor(models.Model):
         """Retorna CPF formatado"""
         return self.cpf
 
+    def get_disciplinas_display(self):
+        """Retorna as disciplinas/matérias formatadas com os nomes de exibição"""
+        if not self.disciplinas or not self.disciplinas.strip():
+            return ''
+        d = dict(MATERIAS_CHOICES)
+        keys = [k.strip() for k in self.disciplinas.split(',') if k.strip()]
+        return ', '.join(d.get(k, k) for k in keys)
+
 
 # ============================================================================
 # MODELO DE PERFIL DE USUÁRIO

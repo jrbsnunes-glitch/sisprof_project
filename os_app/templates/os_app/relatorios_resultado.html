@@ -80,7 +80,7 @@
 <div class="card shadow-sm mb-3 no-print">
     <div class="card-body">
         <div class="btn-group" role="group">
-            <a href="{% url 'os_app:relatorios_filtros' %}" class="btn btn-outline-primary">
+            <a href="{% url 'os_app:relatorios_filtros' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left"></i> Voltar aos Filtros
             </a>
             <button onclick="imprimirRelatorio()" class="btn btn-outline-secondary">
@@ -97,7 +97,7 @@
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0" style="font-size: 0.85rem;">
+            <table class="table table-hover table-sm mb-0" style="font-size: 0.85rem;" data-num-cols="{{ campos_selecionados|length }}">
                 <thead class="table-dark">
                     <tr>
                         <th style="width: 40px;">#</th>
@@ -114,6 +114,7 @@
                                 {% elif campo == 'matricula' %}Matrícula
                                 {% elif campo == 'ref_global' %}Ref. Global
                                 {% elif campo == 'area_atuacao' %}Área
+                                {% elif campo == 'materias' %}Matérias
                                 {% elif campo == 'modalidade' %}Modalidade
                                 {% elif campo == 'turno' %}Turno
                                 {% elif campo == 'serie' %}Série
@@ -198,16 +199,13 @@
                                     {% else %}
                                         -
                                     {% endif %}
-
-                                    {% if 'materias' in campos_selecionados %}
-                                    <td>
-                                     {% if professor.materias %}
-                                    {{ professor.get_materias_display|join:", " }}
+                                    
+                                {% elif campo == 'materias' %}
+                                    {% if professor.disciplinas %}
+                                        <small title="{{ professor.get_disciplinas_display }}">{{ professor.get_disciplinas_display|truncatechars:50 }}</small>
                                     {% else %}
                                         -
                                     {% endif %}
-                                    </td>
-                                {% endif %}
                                     
                                 {% elif campo == 'modalidade' %}
                                     {{ professor.get_modalidade_display|default:"-" }}
@@ -420,9 +418,7 @@
 }
 
 @media print {
-    @page {
-        size: landscape;
-    }
+    /* Orientação da página é definida dinamicamente por JS (paisagem só quando muitas colunas) */
     
     .sidebar,
     .sidebar-toggle,
@@ -482,6 +478,28 @@ function imprimirRelatorio() {
     });
     var el = document.getElementById('printDataHoraRelatorio');
     if (el) el.textContent = dataHora;
+
+    var LIMITE_COLUNAS_PAISAGEM = 6;
+    var tabela = document.querySelector('table[data-num-cols]');
+    var numCols = tabela ? parseInt(tabela.getAttribute('data-num-cols'), 10) : 0;
+    if (isNaN(numCols)) numCols = 0;
+    var usarPaisagem = numCols >= LIMITE_COLUNAS_PAISAGEM;
+    var tamanho = usarPaisagem ? 'landscape' : 'portrait';
+
+    var styleId = 'print-orientation-dynamic';
+    var existente = document.getElementById(styleId);
+    if (existente) existente.remove();
+    var styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.textContent = '@media print { @page { size: ' + tamanho + '; } }';
+    document.head.appendChild(styleEl);
+
+    function removerEstilo() {
+        var s = document.getElementById(styleId);
+        if (s) s.remove();
+        window.removeEventListener('afterprint', removerEstilo);
+    }
+    window.addEventListener('afterprint', removerEstilo);
     window.print();
 }
 

@@ -55,7 +55,7 @@
                                                name="campos" 
                                                value="{{ campo.id }}" 
                                                id="campo_{{ campo.id }}"
-                                               {% if campo.id in 'id,nome,cargo,situacao_funcional,escola,area_atuacao' %}checked{% endif %}>
+                                               {% if get_campos %}{% if campo.id in get_campos %}checked{% endif %}{% else %}{% if campo.id in 'id,nome,cargo,situacao_funcional,escola_lotacao,area_atuacao' %}checked{% endif %}{% endif %}>
                                         <label class="form-check-label" for="campo_{{ campo.id }}" style="font-size: 0.85rem;">
                                             {{ campo.nome }}
                                         </label>
@@ -92,12 +92,14 @@
                                 <input type="number" 
                                        class="form-control" 
                                        name="professor_id_inicio" 
-                                       placeholder="De">
+                                       placeholder="De"
+                                       value="{{ request.GET.professor_id_inicio }}">
                                 <span class="input-group-text">até</span>
                                 <input type="number" 
                                        class="form-control" 
                                        name="professor_id_fim" 
-                                       placeholder="Até">
+                                       placeholder="Até"
+                                       value="{{ request.GET.professor_id_fim }}">
                             </div>
                             <small class="text-muted">Ex: De 100 até 200</small>
                         </div>
@@ -106,7 +108,8 @@
                             <input type="number" 
                                    class="form-control form-control-sm" 
                                    name="professor_id" 
-                                   placeholder="Ex: 123">
+                                   placeholder="Ex: 123"
+                                   value="{{ request.GET.professor_id }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label-sm">
@@ -115,7 +118,8 @@
                             <input type="text" 
                                    class="form-control form-control-sm" 
                                    name="ref_global" 
-                                   placeholder="Ex: 2024001">
+                                   placeholder="Ex: 2024001"
+                                   value="{{ request.GET.ref_global }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">
@@ -124,7 +128,8 @@
                             <input type="text" 
                                    class="form-control form-control-sm" 
                                    name="cidade" 
-                                   placeholder="Ex: Manaus">
+                                   placeholder="Ex: Manaus"
+                                   value="{{ request.GET.cidade }}">
                         </div>
                     </div>
                 </div>
@@ -144,7 +149,7 @@
                             <select name="nucleo" id="nucleo" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 {% for nucleo in nucleos %}
-                                <option value="{{ nucleo.id }}">{{ nucleo.nome|truncatechars:30 }}</option>
+                                <option value="{{ nucleo.id }}" {% if request.GET.nucleo == nucleo.id|stringformat:"s" %}selected{% endif %}>{{ nucleo.nome|truncatechars:30 }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -153,7 +158,7 @@
                             <select name="escola" id="escola" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 {% for escola in escolas %}
-                                <option value="{{ escola.id }}" data-nucleo="{{ escola.nucleo.id|default:'' }}">
+                                <option value="{{ escola.id }}" data-nucleo="{{ escola.nucleo.id|default:'' }}" {% if request.GET.escola == escola.id|stringformat:"s" %}selected{% endif %}>
                                     {{ escola.nome|truncatechars:30 }}
                                 </option>
                                 {% endfor %}
@@ -164,7 +169,7 @@
                             <select name="bairro" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 {% for bairro in bairros %}
-                                <option value="{{ bairro.id }}">{{ bairro.nome }}</option>
+                                <option value="{{ bairro.id }}" {% if request.GET.bairro == bairro.id|stringformat:"s" %}selected{% endif %}>{{ bairro.nome }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -186,7 +191,7 @@
                             <select name="cargo" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 {% for cargo in cargos %}
-                                <option value="{{ cargo.id }}">{{ cargo.nome|truncatechars:20 }}</option>
+                                <option value="{{ cargo.id }}" {% if request.GET.cargo == cargo.id|stringformat:"s" %}selected{% endif %}>{{ cargo.nome|truncatechars:20 }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -195,7 +200,7 @@
                             <select name="situacao" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 {% for value, label in situacoes %}
-                                <option value="{{ value }}">{{ label }}</option>
+                                <option value="{{ value }}" {% if request.GET.situacao == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -204,7 +209,7 @@
                             <select name="area" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 {% for value, label in areas %}
-                                <option value="{{ value }}">{{ label|truncatechars:20 }}</option>
+                                <option value="{{ value }}" {% if request.GET.area == value %}selected{% endif %}>{{ label|truncatechars:20 }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -212,8 +217,8 @@
                             <label class="form-label-sm">Em Sala</label>
                             <select name="em_sala" class="form-select form-select-sm">
                                 <option value="">Todos</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
+                                <option value="sim" {% if request.GET.em_sala == 'sim' %}selected{% endif %}>Sim</option>
+                                <option value="nao" {% if request.GET.em_sala == 'nao' %}selected{% endif %}>Não</option>
                             </select>
                         </div>
 
@@ -224,7 +229,7 @@
                         <select name="materia" class="form-select form-select-sm">
                             <option value="">Todas as matérias</option>
                             {% for value, label in materias %}
-                            <option value="{{ value }}">{{ label }}</option>
+                            <option value="{{ value }}" {% if request.GET.materia == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                         <small class="text-muted">Filtra professores que lecionam esta matéria</small>
@@ -239,14 +244,14 @@
                                 <select name="serie_id_inicio" class="form-select">
                                     <option value="">De...</option>
                                     {% for serie in series %}
-                                    <option value="{{ serie.id }}">{{ serie.nome }}</option>
+                                    <option value="{{ serie.id }}" {% if request.GET.serie_id_inicio == serie.id|stringformat:"s" %}selected{% endif %}>{{ serie.nome }}</option>
                                     {% endfor %}
                                 </select>
                                 <span class="input-group-text">até</span>
                                 <select name="serie_id_fim" class="form-select">
                                     <option value="">Até...</option>
                                     {% for serie in series %}
-                                    <option value="{{ serie.id }}">{{ serie.nome }}</option>
+                                    <option value="{{ serie.id }}" {% if request.GET.serie_id_fim == serie.id|stringformat:"s" %}selected{% endif %}>{{ serie.nome }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -256,7 +261,7 @@
                             <select name="serie" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 {% for serie in series %}
-                                <option value="{{ serie.id }}">{{ serie.nome }}</option>
+                                <option value="{{ serie.id }}" {% if request.GET.serie == serie.id|stringformat:"s" %}selected{% endif %}>{{ serie.nome }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -265,7 +270,7 @@
                             <select name="modalidade" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 {% for value, label in modalidades %}
-                                <option value="{{ value }}">{{ label }}</option>
+                                <option value="{{ value }}" {% if request.GET.modalidade == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -277,14 +282,14 @@
                                 <select name="turno_inicio" class="form-select">
                                     <option value="">De...</option>
                                     {% for value, label in turnos %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                    <option value="{{ value }}" {% if request.GET.turno_inicio == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                                 <span class="input-group-text">até</span>
                                 <select name="turno_fim" class="form-select">
                                     <option value="">Até...</option>
                                     {% for value, label in turnos %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                    <option value="{{ value }}" {% if request.GET.turno_fim == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -294,7 +299,7 @@
                             <select name="turno" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 {% for value, label in turnos %}
-                                <option value="{{ value }}">{{ label }}</option>
+                                <option value="{{ value }}" {% if request.GET.turno == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -444,7 +449,7 @@ function deselecionarTodos() {
 // Selecionar padrões
 function selecionarPadroes() {
     deselecionarTodos();
-    const padroes = ['id', 'nome', 'cargo', 'situacao_funcional', 'escola', 'area_atuacao'];
+    const padroes = ['id', 'nome', 'cargo', 'situacao_funcional', 'escola_lotacao', 'area_atuacao'];
     padroes.forEach(campo => {
         const cb = document.getElementById('campo_' + campo);
         if (cb) cb.checked = true;
