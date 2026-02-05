@@ -104,8 +104,9 @@ def index(request):
     professores_com_area = Professor.objects.exclude(
         Q(area_atuacao='') | Q(area_atuacao__isnull=True)
     ).count()
-    total_escolas = Escola.objects.count()
+    total_escolas_dependentes = Escola.objects.count()
     total_nucleos = EscolaNucleo.objects.count()
+    total_escolas = total_escolas_dependentes + total_nucleos
     
     # Últimos professores cadastrados
     ultimos_professores = Professor.objects.select_related(
@@ -574,20 +575,20 @@ def lista_escolas_nucleo(request):
     
     escolas = escolas.order_by('nome')
     
-    # Adicionar contagem de dependentes
-    for escola in escolas:
-        escola.num_dependentes = Escola.objects.filter(nucleo=escola).count()
-        escola.num_professores = Professor.objects.filter(escola_nucleo=escola).count()
-    
-    # Paginação
+    # Paginação primeiro (para não avaliar o queryset inteiro)
     paginator = Paginator(escolas, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Adicionar contagem apenas aos itens da página atual
+    for escola in page_obj.object_list:
+        escola.num_dependentes = Escola.objects.filter(nucleo=escola).count()
+        escola.num_professores = Professor.objects.filter(escola_nucleo=escola).count()
+    
     context = {
         'escolas': page_obj,
         'busca': busca,
-        'total': escolas.count()
+        'total': paginator.count
     }
     return render(request, 'os_app/lista_escolas_nucleo.html', context)
 
@@ -637,6 +638,20 @@ def editar_escola_nucleo(request, pk):
         'editando': True
     }
     return render(request, 'os_app/form_escola_nucleo.html', context)
+
+
+@login_required
+def detalhe_escola_nucleo(request, pk):
+    """Exibe detalhes de uma escola núcleo"""
+    escola = get_object_or_404(EscolaNucleo, pk=pk)
+    num_dependentes = Escola.objects.filter(nucleo=escola).count()
+    num_professores = Professor.objects.filter(escola_nucleo=escola).count()
+    context = {
+        'escola': escola,
+        'num_dependentes': num_dependentes,
+        'num_professores': num_professores,
+    }
+    return render(request, 'os_app/detalhe_escola_nucleo.html', context)
 
 
 @login_required
@@ -764,6 +779,18 @@ def editar_escola_dependente(request, pk):
         'editando': True
     }
     return render(request, 'os_app/form_escola_dependente.html', context)
+
+
+@login_required
+def detalhe_escola_dependente(request, pk):
+    """Exibe detalhes de uma escola dependente"""
+    escola = get_object_or_404(Escola, pk=pk)
+    num_professores = Professor.objects.filter(escola_lotacao=escola).count()
+    context = {
+        'escola': escola,
+        'num_professores': num_professores,
+    }
+    return render(request, 'os_app/detalhe_escola_dependente.html', context)
 
 
 @login_required

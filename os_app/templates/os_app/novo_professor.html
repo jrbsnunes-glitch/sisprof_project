@@ -300,7 +300,7 @@
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ form.telefone.id_for_label }}" class="form-label fw-bold required-field">
+                                <label for="{{ form.telefone.id_for_label }}" class="form-label fw-bold">
                                     <i class="bi bi-telephone"></i> Telefone
                                 </label>
                                 {{ form.telefone }}
@@ -312,7 +312,7 @@
 
                         <div class="row mb-3">
                             <div class="col-12">
-                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold required-field">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">
                                     <i class="bi bi-envelope"></i> E-mail
                                 </label>
                                 {{ form.email }}
@@ -1192,15 +1192,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Por favor, preencha o CPF do professor.');
                 proximaAba('pessoais-tab');
                 if (cpf) cpf.focus();
-                return false;
-            }
-            
-            if (!email || !email.value.trim()) {
-                e.preventDefault();
-                window.formSubmitted = false;
-                alert('Por favor, preencha o e-mail do professor.');
-                proximaAba('pessoais-tab');
-                if (email) email.focus();
                 return false;
             }
             

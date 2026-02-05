@@ -119,7 +119,13 @@
                                 <label for="{{ form.bairro.id_for_label }}" class="form-label fw-bold">
                                     Bairro
                                 </label>
-                                {{ form.bairro }}
+                                <div class="input-group">
+                                    {{ form.bairro }}
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal"
+                                            data-bs-target="#modalNovoBairroDependente" title="Cadastrar novo bairro">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
                                 {% if form.bairro.errors %}
                                     <div class="text-danger mt-1">{{ form.bairro.errors }}</div>
                                 {% endif %}
@@ -190,4 +196,119 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Novo Bairro (na mesma tela) -->
+<div class="modal fade" id="modalNovoBairroDependente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-signpost"></i> Novo Bairro</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoBairroDependente">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Bairro *</label>
+                        <input type="text" name="nome" class="form-control" required
+                               placeholder="Ex: Centro, Jardim das Flores">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold">Cidade</label>
+                            <input type="text" name="cidade" class="form-control"
+                                   placeholder="Nome da cidade (opcional)">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">UF</label>
+                            <input type="text" name="estado" class="form-control" maxlength="2"
+                                   placeholder="UF" id="modal_bairro_dependente_estado">
+                        </div>
+                    </div>
+                    <div id="bairro_dependente_erro" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-info text-white" id="btnSalvarBairroDependente">
+                    <i class="bi bi-check-circle"></i> Salvar Bairro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const selectBairro = document.getElementById('id_bairro');
+    const formNovoBairro = document.getElementById('formNovoBairroDependente');
+    const btnSalvar = document.getElementById('btnSalvarBairroDependente');
+    const erroDiv = document.getElementById('bairro_dependente_erro');
+
+    if (!selectBairro || !formNovoBairro || !btnSalvar) return;
+
+    const inputEstado = document.getElementById('modal_bairro_dependente_estado');
+    if (inputEstado) {
+        inputEstado.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+
+    btnSalvar.addEventListener('click', function() {
+        const form = new FormData(formNovoBairro);
+        const nome = form.get('nome');
+        if (!nome || nome.trim() === '') {
+            erroDiv.textContent = 'Por favor, preencha o nome do bairro.';
+            erroDiv.style.display = 'block';
+            return;
+        }
+
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+        erroDiv.style.display = 'none';
+
+        fetch('{% url "os_app:novo_bairro_ajax" %}', {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': form.get('csrfmiddlewaretoken')}
+        })
+        .then(function(r) {
+            if (!r.ok) throw new Error('Erro ao salvar bairro.');
+            return r.json();
+        })
+        .then(function(d) {
+            if (d.success) {
+                const opt = new Option(d.nome_completo || d.nome, d.id, true, true);
+                selectBairro.add(opt);
+                selectBairro.value = d.id;
+                var modalEl = document.getElementById('modalNovoBairroDependente');
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    bootstrap.Modal.getInstance(modalEl).hide();
+                }
+                formNovoBairro.reset();
+                if (typeof alert !== 'undefined') alert('Bairro cadastrado com sucesso!');
+            } else {
+                var msg = 'Erro ao cadastrar bairro.';
+                if (d.errors) {
+                    msg += ' ' + Object.keys(d.errors).map(function(k) { return d.errors[k]; }).join(' ');
+                }
+                erroDiv.innerHTML = msg;
+                erroDiv.style.display = 'block';
+            }
+        })
+        .catch(function(err) {
+            erroDiv.textContent = 'Erro ao cadastrar bairro: ' + (err.message || err);
+            erroDiv.style.display = 'block';
+        })
+        .finally(function() {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="bi bi-check-circle"></i> Salvar Bairro';
+        });
+    });
+})();
+</script>
 {% endblock %}

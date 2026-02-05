@@ -103,6 +103,11 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
+                                <a href="{% url 'os_app:detalhe_escola_dependente' escola.id %}" 
+                                   class="btn btn-sm btn-info text-white" 
+                                   title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{% url 'os_app:editar_escola_dependente' escola.id %}" 
                                    class="btn btn-sm btn-warning" 
                                    title="Editar">

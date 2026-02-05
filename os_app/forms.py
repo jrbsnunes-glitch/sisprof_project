@@ -166,6 +166,9 @@ class ProfessorForm(forms.ModelForm):
         if self.instance.pk and self.instance.escola_nucleo:
             self.fields['nucleo'].initial = self.instance.escola_nucleo
 
+        self.fields['telefone'].required = False
+        self.fields['email'].required = False
+
         if self.instance and self.instance.pk and self.instance.disciplinas:
             materias_list = [m.strip() for m in self.instance.disciplinas.split(',') if m.strip()]
             self.fields['materias_selecionadas'].initial = materias_list
@@ -256,8 +259,8 @@ class EscolaNucleoForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nº'
             }),
-            'bairro': forms.HiddenInput(attrs={
-                'id': 'id_nucleo_bairro'
+            'bairro': forms.Select(attrs={
+                'class': 'form-control'
             }),
             'cep': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -288,6 +291,13 @@ class EscolaNucleoForm(forms.ModelForm):
                 'placeholder': 'email@nucleo.com'
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'bairro' in self.fields:
+            self.fields['bairro'].queryset = Bairro.objects.all().order_by('nome')
+            self.fields['bairro'].empty_label = 'Selecione o bairro'
+            self.fields['bairro'].required = False
 
 
 class EscolaForm(forms.ModelForm):
@@ -320,8 +330,8 @@ class EscolaForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nº'
             }),
-            'bairro': forms.HiddenInput(attrs={
-                'id': 'id_escola_bairro'
+            'bairro': forms.Select(attrs={
+                'class': 'form-control'
             }),
             'cep': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -352,6 +362,13 @@ class EscolaForm(forms.ModelForm):
                 'placeholder': 'email@escola.com'
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'bairro' in self.fields:
+            self.fields['bairro'].queryset = Bairro.objects.all().order_by('nome')
+            self.fields['bairro'].empty_label = 'Selecione o bairro'
+            self.fields['bairro'].required = False
 
 
 class CargoForm(forms.ModelForm):

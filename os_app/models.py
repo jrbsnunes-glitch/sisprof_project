@@ -232,8 +232,8 @@ class Professor(models.Model):
     ref_global = models.CharField('Ref. Global', max_length=5, blank=True, null=True)
     foto = models.ImageField('Foto', upload_to='professores/fotos/', null=True, blank=True, 
                              help_text='Foto do professor (opcional)')
-    telefone = models.CharField('Telefone', max_length=15)
-    email = models.EmailField('E-mail')
+    telefone = models.CharField('Telefone', max_length=15, blank=True)
+    email = models.EmailField('E-mail', blank=True)
     
     # Dados Profissionais
     matricula = models.CharField('Matrícula', max_length=20, unique=True, blank=True, null=True)

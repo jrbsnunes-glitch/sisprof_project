@@ -37,12 +37,14 @@ urlpatterns = [
     # Escolas Núcleo
     path('escolas-nucleo/', views.lista_escolas_nucleo, name='lista_escolas_nucleo'),
     path('escolas-nucleo/novo/', views.nova_escola_nucleo, name='nova_escola_nucleo'),
+    path('escolas-nucleo/<int:pk>/', views.detalhe_escola_nucleo, name='detalhe_escola_nucleo'),
     path('escolas-nucleo/<int:pk>/editar/', views.editar_escola_nucleo, name='editar_escola_nucleo'),
     path('escolas-nucleo/<int:pk>/deletar/', views.deletar_escola_nucleo, name='deletar_escola_nucleo'),
     
     # Escolas Dependentes
     path('escolas-dependentes/', views.lista_escolas_dependentes, name='lista_escolas_dependentes'),
     path('escolas-dependentes/novo/', views.nova_escola_dependente, name='nova_escola_dependente'),
+    path('escolas-dependentes/<int:pk>/', views.detalhe_escola_dependente, name='detalhe_escola_dependente'),
     path('escolas-dependentes/<int:pk>/editar/', views.editar_escola_dependente, name='editar_escola_dependente'),
     path('escolas-dependentes/<int:pk>/deletar/', views.deletar_escola_dependente, name='deletar_escola_dependente'),
     

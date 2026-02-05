@@ -1,0 +1,92 @@
+{% extends "os_app/base.html" %}
+
+{% block title %}{{ escola.nome }} - Escola Dependente - SISPROF{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h2 class="fw-bold">
+                        <i class="bi bi-building text-success"></i> {{ escola.nome }}
+                    </h2>
+                    <p class="text-muted mb-0">Detalhes da escola dependente</p>
+                </div>
+                <div>
+                    <a href="{% url 'os_app:lista_escolas_dependentes' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{% url 'os_app:editar_escola_dependente' escola.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Dados Básicos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <strong>Escola Núcleo:</strong>
+                            {% if escola.nucleo %}
+                                <i class="bi bi-buildings text-primary"></i> {{ escola.nucleo.nome }}
+                            {% else %}
+                                <span class="text-muted">Sem núcleo vinculado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-8"><strong>Nome:</strong> {{ escola.nome }}</div>
+                        <div class="col-md-4"><strong>Código INEP:</strong> {{ escola.codigo_inep|default:"-" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6"><strong>Zona:</strong> {{ escola.get_zona_display }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Endereço</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-9"><strong>Endereço:</strong> {{ escola.endereco|default:"-" }}{% if escola.numero %}, {{ escola.numero }}{% endif %}</div>
+                        <div class="col-md-3"><strong>CEP:</strong> {{ escola.cep|default:"-" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4"><strong>Bairro:</strong> {{ escola.bairro|default:"-" }}</div>
+                        <div class="col-md-5"><strong>Cidade:</strong> {{ escola.cidade }}</div>
+                        <div class="col-md-3"><strong>Estado:</strong> {{ escola.estado }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-telephone"></i> Contato</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6"><strong>Telefone:</strong> {{ escola.telefone|default:"-" }}</div>
+                        <div class="col-md-6"><strong>E-mail:</strong> {{ escola.email|default:"-" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Resumo</h5>
+                </div>
+                <div class="card-body">
+                    <span class="badge bg-success fs-6">{{ num_professores }}</span> professor(es) lotado(s) nesta escola
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
